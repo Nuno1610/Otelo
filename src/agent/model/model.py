@@ -1,6 +1,10 @@
 import os
+import sys
 import pandas as pd
 import numpy as np
+import numpy.core.numeric as numpy_numeric
+
+sys.modules.setdefault("numpy._core.numeric", numpy_numeric)
 
 from keras.models import Sequential
 from keras.layers import Conv2D, Flatten, Dense

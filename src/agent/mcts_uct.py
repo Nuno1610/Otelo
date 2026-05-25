@@ -56,8 +56,10 @@ class MCTSNode:
                 return float('inf')  # Prioriza hijos no visitados para explorarlos
             
             base_score = (n.total_reward / n.visits) + c * math.sqrt(2 * math.log(self.visits) / n.visits) # Fórmula UCB1 que combina recompensa media y exploración controlada por c
-            noise = random.gauss(0, noise_std) # Ruido gaussiano para que haya algo de aleatoriedad en las simulaciones de agente con red vs agente con red
-            return base_score + noise
+            if training:
+                noise = random.gauss(0, noise_std) # Ruido gaussiano solo en autojuego para introducir aleatoriedad durante el entrenamiento
+                return base_score + noise
+            return base_score
 
         return max(self.children, key=ucb1)  # Devuelve el hijo que maximiza la ecuacion ucb
 

@@ -9,6 +9,13 @@ from agent import mcts_uct
 BLANCO = 1
 NEGRO = 2
 
+def asignar_recompensa(jugador, ganador):
+    if ganador == 0:
+        return 0
+    if jugador == BLANCO:
+        return 1 if ganador == BLANCO else -1
+    return 1 if ganador == NEGRO else -1
+
 def simulate_agent_vs_agent(iterations=1000):
     board = othello.create_board()
     player = NEGRO # Empieza el negro siempre
@@ -35,12 +42,7 @@ def simulate_agent_vs_agent(iterations=1000):
 
     results = []
     for state, active_player in states: # Por cada estado almacenado guardo el resultado de la partida para el jugador activo
-        if winner == 0: # Si hay empate
-            result = 0
-        elif active_player == winner:
-            result = 1
-        else:
-            result = -1
+        result = asignar_recompensa(active_player, winner)
         results.append((state, active_player, result))
 
     return results
@@ -86,12 +88,7 @@ def simulate_agent_vs_random(iterations=1000): # Simula partida en la que el age
 
     results = []
     for state, active_player in states: # Por cada estado almacenado guardo el resultado de la partida para el jugador activo
-        if winner == 0: # Si hay empate
-            result = 0
-        elif active_player == winner:
-            result = 1
-        else:
-            result = -1
+        result = asignar_recompensa(active_player, winner)
         results.append((state, active_player, result))
 
     return results, agent_won
@@ -137,12 +134,7 @@ def simulate_agent_vs_old(iterations=1000): # Simula partida en la que el agente
 
     results = []
     for state, active_player in states: # Por cada estado almacenado guardo el resultado de la partida para el jugador activo
-        if winner == 0: # Si hay empate
-            result = 0
-        elif active_player == winner:
-            result = 1
-        else:
-            result = -1
+        result = asignar_recompensa(active_player, winner)
         results.append((state, active_player, result))
 
     return results, agent_won
