@@ -72,7 +72,7 @@ class MCTSNode:
             current_reward = -current_reward # Cambio de perspectiva de jugador para reflejar la recompensa en el adversario
             node = node.parent
 
-def tree_policy(node, c):
+def tree_policy(node, c, training=False):
     while not node.is_terminal():
         movs = othello.valid_movements(node.state, node.player)
         if not movs:  # No hay movimientos, pasar turno
@@ -90,7 +90,7 @@ def tree_policy(node, c):
             child = node.expand()
             return child
         else:
-            best = node.best_child(c)
+            best = node.best_child(c, training=training)
             node = best
     return node
 
@@ -129,7 +129,7 @@ def mcts_uct(state, player, iterations=1000, neural=True, training=False):  # Al
     root = MCTSNode(np.copy(state), player)
 
     for _ in range(iterations):
-        node = tree_policy(root, c)  # Selección y expansión del nodo
+        node = tree_policy(root, c, training=training)  # Selección y expansión del nodo
         if(neural):
             reward = default_policy(node.state, root.player)  # Simulación con red neuronal como default policy
         else:
