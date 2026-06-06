@@ -6,79 +6,94 @@ from multiprocessing import Pool
 from game import othello
 from agent import mcts_uct
 
-BLANCO = 1
-NEGRO = 2
+# Constantes (mantener alias en español para compatibilidad)
+WHITE = 1
+BLACK = 2
+BLANCO = WHITE
+NEGRO = BLACK
 
-def asignar_recompensa(jugador, ganador):
-    if ganador == 0:
+
+def assign_reward(player, winner):
+    """Asigna recompensa desde la perspectiva de `player`.
+
+    Devuelve 1 si `player` ganó, -1 si perdió, 0 en empate.
+    """
+    if winner == 0:
         return 0
-    if jugador == BLANCO:
-        return 1 if ganador == BLANCO else -1
-    return 1 if ganador == NEGRO else -1
+    if player == WHITE:
+        return 1 if winner == WHITE else -1
+    return 1 if winner == BLACK else -1
 
-def simulate_agent_vs_agent(iterations=1000):
+
+def simulate_self_play(iterations=1000):
+    """Simula una partida donde ambos jugadores usan MCTS (devuelve lista de ejemplos).
+
+    Cada elemento de la lista es tupla `(state, active_player, reward)`.
+    """
     board = othello.create_board()
-    player = NEGRO # Empieza el negro siempre
-    states = []
+    current = BLACK  # comienza siempre el negro
+    history = []
     skipped_turns = 0
 
     while not othello.is_board_full(board) and skipped_turns < 2:
-
-        movs = othello.valid_movements(board, player)
-        if not movs: # Si no hay movimientos validos, se skipea el turno, no se puede aplicar el algoritmo
+        moves = othello.valid_movements(board, current)
+        if not moves:
             skipped_turns += 1
-            player = 3 - player
+            current = 3 - current
             continue
         skipped_turns = 0
 
-        mov = mcts_uct.mcts_uct(state=board, player=player, iterations=iterations, training=True) # Aplica algoritmo mcts con uct para encontrar movimiento óptimo
+        move = mcts_uct.mcts_uct(state=board, player=current, iterations=iterations, training=True)
 
-        othello.apply_movement(board, mov[0], mov[1], player)
-        actual_state = np.copy(board)
-        player = 3 - player
-        states.append((actual_state, player))
+        othello.apply_movement(board, move[0], move[1], current)
+        snapshot = np.copy(board)
+        current = 3 - current
+        history.append((snapshot, current))
 
     winner = othello.decide_winner(board)
 
-    results = []
-    for state, active_player in states: # Por cada estado almacenado guardo el resultado de la partida para el jugador activo
-        result = asignar_recompensa(active_player, winner)
-        results.append((state, active_player, result))
+    examples = []
+    for state, active_player in history:
+        reward = assign_reward(active_player, winner)
+        examples.append((state, active_player, reward))
 
-    return results
+    return examples
 
-def simulate_agent_vs_random(iterations=1000): # Simula partida en la que el agente entrenado juega contra un agente que pilla movimientos random
+
+def simulate_vs_random(iterations=1000):
+    """Simula una partida: agente MCTS vs jugador aleatorio.
+
+    Devuelve `(examples, agent_won_flag)` donde `agent_won_flag` es 1 si el agente ganó.
+    """
     board = othello.create_board()
-    states = []
+    history = []
     skipped_turns = 0
 
-    current_player = NEGRO
-    agent = random.choice([BLANCO,NEGRO])
+    current_player = BLACK
+    agent_color = random.choice([WHITE, BLACK])
 
     while not othello.is_board_full(board) and skipped_turns < 2:
-
-        movs = othello.valid_movements(board, current_player)
-        if not movs: # Si no hay movimientos validos, se skipea el turno, no se puede aplicar el algoritmo
+        moves = othello.valid_movements(board, current_player)
+        if not moves:
             skipped_turns += 1
             current_player = 3 - current_player
             continue
         skipped_turns = 0
 
-        if current_player == agent:
-            mov = mcts_uct.mcts_uct(state=board, player=current_player, iterations=iterations, neural=True) # Aplica algoritmo mcts con uct para encontrar movimiento óptimo
+        if current_player == agent_color:
+            move = mcts_uct.mcts_uct(state=board, player=current_player, iterations=iterations, neural=True)
         else:
-            mov = random.choice(movs)
+            move = random.choice(moves)
 
-        othello.apply_movement(board, mov[0], mov[1], current_player)
-        actual_state = np.copy(board)
+        othello.apply_movement(board, move[0], move[1], current_player)
+        snapshot = np.copy(board)
         current_player = 3 - current_player
-        states.append((actual_state, current_player))
+        history.append((snapshot, current_player))
 
     winner = othello.decide_winner(board)
 
     agent_won = 0
-
-    if winner == agent:
+    if winner == agent_color:
         print("Gana el agente")
         agent_won = 1
     elif winner == 0:
@@ -86,44 +101,43 @@ def simulate_agent_vs_random(iterations=1000): # Simula partida en la que el age
     else:
         print("Pierde el agente")
 
-    results = []
-    for state, active_player in states: # Por cada estado almacenado guardo el resultado de la partida para el jugador activo
-        result = asignar_recompensa(active_player, winner)
-        results.append((state, active_player, result))
+    examples = [(state, active_player, assign_reward(active_player, winner)) for state, active_player in history]
+    return examples, agent_won
 
-    return results, agent_won
 
-def simulate_agent_vs_old(iterations=1000): # Simula partida en la que el agente entrenado juega contra el mismo agente con la política anterior
+def simulate_vs_previous(iterations=1000):
+    """Simula una partida: agente con red neuronal vs agente con política anterior.
+
+    Devuelve `(examples, agent_won_flag)`.
+    """
     board = othello.create_board()
-    states = []
+    history = []
     skipped_turns = 0
 
-    current_player = NEGRO
-    neural_agent = random.choice([BLANCO,NEGRO])
+    current_player = BLACK
+    neural_agent = random.choice([WHITE, BLACK])
 
     while not othello.is_board_full(board) and skipped_turns < 2:
-
-        movs = othello.valid_movements(board, current_player)
-        if not movs: # Si no hay movimientos validos, se skipea el turno, no se puede aplicar el algoritmo
+        moves = othello.valid_movements(board, current_player)
+        if not moves:
             skipped_turns += 1
             current_player = 3 - current_player
             continue
         skipped_turns = 0
 
         if current_player == neural_agent:
-            mov = mcts_uct.mcts_uct(state=board, player=current_player, iterations=iterations, neural=True) # Aplica algoritmo mcts con red neuronal como política
+            move = mcts_uct.mcts_uct(state=board, player=current_player, iterations=iterations, neural=True)
         else:
-            mov = mcts_uct.mcts_uct(state=board, player=current_player, iterations=iterations, neural=False)
+            move = mcts_uct.mcts_uct(state=board, player=current_player, iterations=iterations, neural=False)
 
-        othello.apply_movement(board, mov[0], mov[1], current_player)
-        actual_state = np.copy(board)
+        othello.apply_movement(board, move[0], move[1], current_player)
+        snapshot = np.copy(board)
         current_player = 3 - current_player
-        states.append((actual_state, current_player))
+        history.append((snapshot, current_player))
 
     winner = othello.decide_winner(board)
 
     agent_won = 0
-
     if winner == neural_agent:
         print("Gana el agente con red neuronal")
         agent_won = 1
@@ -132,85 +146,95 @@ def simulate_agent_vs_old(iterations=1000): # Simula partida en la que el agente
     else:
         print("Pierde el agente con red neuronal")
 
-    results = []
-    for state, active_player in states: # Por cada estado almacenado guardo el resultado de la partida para el jugador activo
-        result = asignar_recompensa(active_player, winner)
-        results.append((state, active_player, result))
+    examples = [(state, active_player, assign_reward(active_player, winner)) for state, active_player in history]
+    return examples, agent_won
 
-    return results, agent_won
 
-def generate_data_parallel(simulation_function, num_games=500, iterations=1000, processes=4): #Simulación de varias partidas paralelamente, para reducir tiempo de espera
-    args = [(iterations,) for _ in range(num_games)] # Creamos una lista de argumentos, uno por cada juego. El argumento siempre es el mismo, las iteraciones
-    with Pool(processes=processes) as pool: # Pool de procesos, cada uno simulando una partida. Al salir del bloque with Python se encarga de liberar recursos
-        results = pool.starmap(simulation_function, args) # Cada simulate_game recibe un argumento de la lista, que es el mismo realmente
+def generate_games_parallel(simulation_function, num_games=500, iterations=1000, processes=4):
+    """Genera datos ejecutando `simulation_function` en paralelo `num_games` veces.
+
+    - Si la función devuelve (data, agent_won), también retorna el total de victorias.
+    - Si la función devuelve solo data, retorna la lista combinada.
+    """
+    args = [(iterations,) for _ in range(num_games)]
+    with Pool(processes=processes) as pool:
+        results = pool.starmap(simulation_function, args)
+
     data = []
-    if(simulation_function == simulate_agent_vs_old or simulation_function == simulate_agent_vs_random):
-        victories = 0 # Contador de victorias del agente, sea el normal o el que usa la neurona dependiendo del caso
-        for game_data, agent_won in results: 
-            data.extend(game_data)  # Unimos todos los datos de las diferentes partidas simuladas en una única lista
-            victories += agent_won # Sumo al contador de victorias para estadisticas
+    # Detección basada en el tipo de retorno: si cada resultado es tupla (data, flag)
+    if simulation_function in (simulate_vs_previous, simulate_vs_random):
+        victories = 0
+        for game_data, agent_won in results:
+            data.extend(game_data)
+            victories += agent_won
         return data, victories
-    else:
-        for game_data in results: 
-            data.extend(game_data)  # Unimos todos los datos de las diferentes partidas simuladas en una única lista
-        return data
+
+    for game_data in results:
+        data.extend(game_data)
+    return data
+
 
 if __name__ == "__main__":
-    processes = os.cpu_count() - 1 # Usa todos los núcleos disponibles menos uno, para no saturar
+    processes = max(1, os.cpu_count() - 1)
 
     while True:
         try:
-            num_games, iterations = map(int,input("Introduce el número de partidas a simular y el número de iteraciones del algoritmo mcts_uct (separados por un espacio): ").split())
+            num_games, iterations = map(int, input("Número de partidas y número de iteraciones (separados por espacio): ").split())
             break
-        except:
-            print("Entrada inválida.")
-    
-    while True:
-        try:
-            choice = int(input("Escoge entre simular datos con el agente jugando contra sí mismo (1), el agente jugando contra un oponente que escoge movimientos aleatorios (2) o el agente con red neuronal contra uno sin red (3): "))
-            if choice in [1,2,3]:
-                simulation_function = simulate_agent_vs_agent if choice == 1 else simulate_agent_vs_random if choice == 2 else simulate_agent_vs_old
-                break
-            else:
-                print("Introduce un número entre 1 y 3")
-        except:
+        except Exception:
             print("Entrada inválida.")
 
     while True:
         try:
-            mode = int(input("Introduce 1 si quieres sobreescribir cualquier dato antiguo o 2 si quieres extender el conjunto de datos: "))
-            if mode in [1,2]:
+            choice = int(input("1) agente vs sí mismo  2) agente vs aleatorio  3) agente NN vs agente anterior: "))
+            if choice in (1, 2, 3):
+                simulation_function = simulate_self_play if choice == 1 else simulate_vs_random if choice == 2 else simulate_vs_previous
                 break
-            else:
-                print("Introduce un número entre 1 y 3")
-        except:
+            print("Introduce 1, 2 o 3")
+        except Exception:
             print("Entrada inválida.")
-    
-    if(simulation_function == simulate_agent_vs_old or simulation_function == simulate_agent_vs_random):
-        data, victories = generate_data_parallel(simulation_function,num_games=num_games, iterations=iterations, processes=processes)
+
+    while True:
+        try:
+            mode = int(input("1) sobrescribir datos  2) extender conjunto de datos: "))
+            if mode in (1, 2):
+                break
+            print("Introduce 1 o 2")
+        except Exception:
+            print("Entrada inválida.")
+
+    if simulation_function in (simulate_vs_previous, simulate_vs_random):
+        data, victories = generate_games_parallel(simulation_function, num_games=num_games, iterations=iterations, processes=processes)
     else:
-        data = generate_data_parallel(simulation_function,num_games=num_games, iterations=iterations, processes=processes)
+        data = generate_games_parallel(simulation_function, num_games=num_games, iterations=iterations, processes=processes)
 
-    base_route = os.path.dirname(os.path.abspath(__file__)) # Obtiene la ruta absoluta del script
-    data_route = os.path.join(base_route, "..", "data") # Obtiene la ruta donde guardar el fichero a partir de la anterior
+    base_route = os.path.dirname(os.path.abspath(__file__))
+    data_route = os.path.join(base_route, "..", "data")
     os.makedirs(data_route, exist_ok=True)
     file_route = os.path.join(data_route, "training_data.pkl")
 
     df = pd.DataFrame(data, columns=['state', 'player', 'result'])
-    if os.path.exists(file_route) and mode == 2: # Si ya existe el fichero y estamos no estamos en modo sobreescritura, concatenamos datos
+    if os.path.exists(file_route) and mode == 2:
         old_df = pd.read_pickle(file_route)
         final_df = pd.concat([old_df, df], ignore_index=True)
     else:
         final_df = df
-    
+
     final_df.to_pickle(file_route)
 
-    # Mostramos estadísticas para análisis en caso de simular partidas del agente vs random o agente con red neuronal vs agente con politica antigua
-    if(simulation_function == simulate_agent_vs_random):
+    if simulation_function == simulate_vs_random:
         print(f"Victorias del agente: {victories} de {num_games} partidas jugadas")
         print(f"Porcentaje de victorias: {(victories / num_games) * 100}%")
-    elif(simulation_function == simulate_agent_vs_old):
+    elif simulation_function == simulate_vs_previous:
         print(f"Victorias del agente con red neuronal: {victories} de {num_games} partidas jugadas")
         print(f"Porcentaje de victorias: {(victories / num_games) * 100}%")
 
     print(f"Guardados {len(data)} ejemplos para entrenamiento.")
+
+
+# Wrappers para compatibilidad con los nombres anteriores en español
+asignar_recompensa = assign_reward
+simulate_agent_vs_agent = simulate_self_play
+simulate_agent_vs_random = simulate_vs_random
+simulate_agent_vs_old = simulate_vs_previous
+generate_data_parallel = generate_games_parallel
