@@ -180,3 +180,9 @@ default_policy = neural_evaluate
 default_policy_old = rollout_random
 mcts_uct = run_mcts
 EXPLORATION_C = EXPLORATION_CONSTANT
+def mcts_uct(state, player, iterations=1000, neural=True, training=False):
+    """Compatibilidad: wrapper con la firma antigua.
+
+    Llama a `run_mcts` mapeando los parámetros antiguos a los nuevos.
+    """
+    return run_mcts(state, player, iterations=iterations, use_neural=neural, training=training)
