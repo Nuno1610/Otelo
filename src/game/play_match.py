@@ -1,87 +1,116 @@
-from game.othello import create_board, is_board_full, show_board, valid_movements, apply_movement, decide_winner
+from game.othello import (
+    create_board,
+    is_board_full,
+    show_board,
+    valid_movements,
+    apply_movement,
+    decide_winner,
+)
 from agent.mcts_uct import mcts_uct
 
-# Constantes para representar el estado de cada casilla en el tablero
-EMPTY = 0   # Casilla vacía
-WHITE = 1   # Ficha blanca
-BLACK = 2   # Ficha negra
+# Valores para el estado de cada casilla
+EMPTY = 0
+WHITE = 1
+BLACK = 2
 
-def play(user, iterations, neural=False): # Bucle principal para jugar una partida
-    board = create_board()  # Crea el tablero inicial con las 4 fichas en el centro
+
+def run_match(human_player, mcts_iterations, use_neural=False):
+    """Ejecuta una partida entre un jugador humano y el agente MCTS.
+
+    Parámetros:
+    - human_player: `WHITE` o `BLACK` indicando el color del humano.
+    - mcts_iterations: número de iteraciones que usa el MCTS.
+    - use_neural: si True, usa la política basada en red neuronal.
+    """
+    board = create_board()
     print("¡Comienza la partida!")
-    
-    agent = 3 - user  # El agente es el color opuesto
-    current_player = BLACK  # Empieza el jugador negro según las reglas
+
+    opponent = 3 - human_player
+    current = BLACK  # según las reglas, comienza el jugador negro
     skipped_turns = 0
-    while not is_board_full(board) and skipped_turns < 2:  # Bucle principal del juego hasta que se acabe
-        print("\nTurno de:", "BLANCAS" if current_player == WHITE else "NEGRAS")
-        show_board(board)  # Muestra el tablero actual
 
-        valid_moves = valid_movements(board, current_player)
+    while not is_board_full(board) and skipped_turns < 2:
+        print("\nTurno de:", "BLANCAS" if current == WHITE else "NEGRAS")
+        show_board(board)
 
-        if not valid_moves:
+        moves = valid_movements(board, current)
+        if not moves:
             print("No hay movimientos válidos. Se pasa el turno.")
-            current_player = 3 - current_player
+            current = 3 - current
             skipped_turns += 1
             continue
-        else:
-            skipped_turns = 0 # Reinicia contador si hay movimientos posibles
 
-        if current_player == user:
-            # Turno del jugador humano
-            print("Movimientos válidos:", valid_moves)
+        skipped_turns = 0
+
+        if current == human_player:
+            # Turno del humano: solicitar coordenadas hasta recibir un movimiento válido
+            print("Movimientos válidos:", moves)
             while True:
                 try:
-                    x, y = map(int, input("Introduce fila y columna (con un espacio entre ambos): ").split())  # Split por cualquier número de espacios, por si acaso
-                    if (x, y) in valid_moves:
-                        apply_movement(board, x, y, user)
-                        break
-                    else:
-                        print("Movimiento inválido. Inténtalo de nuevo.")
-                except:
-                        print("Entrada incorrecta. Inténtalo de nuevo.")
-        else: # Turno del agente (elige un movimiento aplicando mcts con uct)
-            mov = mcts_uct(board, current_player, iterations = iterations, neural=neural) # La política usada depende del parámetro neural
-            print(f"El agente mueve ficha a: {mov[0]} {mov[1]}")
-            apply_movement(board, mov[0], mov[1], agent)
+                    raw = input("Introduce fila y columna (separadas por espacio): ")
+                    x_str, y_str = raw.strip().split()
+                    x, y = int(x_str), int(y_str)
+                except ValueError:
+                    print("Entrada incorrecta. Introduce dos números separados por espacio.")
+                    continue
 
-        current_player = 3 - current_player  # Cambia de turno al otro jugador
+                if (x, y) in moves:
+                    apply_movement(board, x, y, human_player)
+                    break
+                else:
+                    print("Movimiento inválido. Inténtalo de nuevo.")
+        else:
+            # Turno del agente: elegir movimiento mediante MCTS+UCT
+            move = mcts_uct(board, current, iterations=mcts_iterations, neural=use_neural)
+            # `move` debe ser una tupla (fila, columna)
+            print(f"El agente mueve ficha a: {move[0]} {move[1]}")
+            apply_movement(board, move[0], move[1], opponent)
+
+        current = 3 - current
 
     show_board(board)
-    ganador = decide_winner(board)
-    if ganador == user:
+    winner = decide_winner(board)
+    if winner == human_player:
         print("¡Has ganado!")
-    elif ganador == agent:
+    elif winner == opponent:
         print("Derrota")
     else:
         print("¡Empate!")
 
+
+# Mantener compatibilidad: `play` sigue siendo accesible como alias
+play = run_match
+
+
 if __name__ == "__main__":
-    while True: # Elección de color por parte del usuario
+    # Elección de color por parte del usuario
+    while True:
         try:
-            user = int(input("Elige tu color: 1 (Blancas) o 2 (Negras - Empiezas tú): "))
-            if user in [WHITE, BLACK]:
+            choice = int(input("Elige tu color: 1 (Blancas) o 2 (Negras - Empiezas tú): "))
+            if choice in (WHITE, BLACK):
+                human = choice
                 break
-            else:
-                print("Por favor, introduce 1 o 2.")
-        except:
+            print("Por favor, introduce 1 o 2.")
+        except ValueError:
             print("Entrada inválida.")
 
-    while True: # Selección de tipo de agente
+    # Selección de tipo de agente
+    while True:
         try:
-            choice = int(input("Escoge tipo de oponente: Agente sin red neuronal(1) o Agente con red neuronal(2): "))
-            if choice in [1, 2]:
-                neural = False if choice == 1 else True
+            sel = int(input("Escoge oponente: 1) sin red neuronal  2) con red neuronal: "))
+            if sel in (1, 2):
+                use_neural_flag = (sel == 2)
                 break
-            else:
-                print("Introduce un número entre 1 y 3.")
-        except:
+            print("Introduce 1 o 2.")
+        except ValueError:
             print("Entrada inválida.")
 
-    while True: # Selección de dificultad de juego (numero de iteraciones del algoritmo MCTS)
+    # Selección de número de iteraciones para MCTS (dificultad)
+    while True:
         try:
-            iterations = int(input("Elige la dificultadad del juego (nº de iteraciones del algoritmo, a más iteraciones, mayor tiempo de espera): "))
+            iters = int(input("Elige número de iteraciones para MCTS (entero positivo): "))
             break
-        except:
+        except ValueError:
             print("Entrada inválida.")
-    play(user, iterations, neural)
+
+    run_match(human, iters, use_neural=use_neural_flag)
