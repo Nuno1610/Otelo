@@ -1,81 +1,131 @@
 import numpy as np
 
-# Constantes para representar el estado de cada casilla en el tablero
-EMPTY = 0   # Casilla vacía
-WHITE = 1   # Ficha blanca
-BLACK = 2   # Ficha negra
+# Tablero
+BOARD_SIZE = 8
 
-# Direcciones para explorar alrededor de una casilla (8 direcciones: diagonales, verticales y horizontales)
+# Estados de casilla
+EMPTY = 0
+WHITE = 1
+BLACK = 2
+
+# Direcciones de exploración (8 vecinos)
 DIRECTIONS = [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)]
 
-def create_board(): # Inicializa tablero con las 4 fichas iniciales en el centro
-    board = np.zeros((8, 8), dtype=int)
+
+def initialize_board():
+    """Crea y devuelve un tablero 8x8 con la posición inicial.
+
+    Devuelve un `np.ndarray` de enteros con los estados `EMPTY`, `WHITE`, `BLACK`.
+    """
+    board = np.zeros((BOARD_SIZE, BOARD_SIZE), dtype=int)
+    # Posición inicial en el centro
     board[3, 3], board[4, 4] = WHITE, WHITE
     board[3, 4], board[4, 3] = BLACK, BLACK
     return board
 
-def show_board(board): # Muestra el tablero en consola usando símbolos para representar fichas y casillas vacías
-    symbols = ['.', 'B', 'N']  # Otra opción: ●: Negro | ○: Blanco | .: Libre
-    print("  " + " ".join(map(str, range(8))))  # Encabezado de las columnas con números 0-7
-    for i in range(8):
-        row = [symbols[board[i, j]] for j in range(8)]  # Mapea números a símbolos para cada fila
-        print(f"{i} " + " ".join(row))  # Muestra el número de fila y los símbolos correspondientes
 
-def inside_board(x, y): # Verifica que las coordenadas (x, y) estén dentro de los límites del tablero 8x8
-    return 0 <= x < 8 and 0 <= y < 8
+def display_board(board):
+    """Imprime el tablero en consola con símbolos para cada estado."""
+    symbols = {EMPTY: '.', WHITE: 'B', BLACK: 'N'}
+    header = "  " + " ".join(map(str, range(BOARD_SIZE)))
+    print(header)
+    for i in range(BOARD_SIZE):
+        row = [symbols[int(board[i, j])] for j in range(BOARD_SIZE)]
+        print(f"{i} " + " ".join(row))
 
-def valid_movements(board, player):
-    movs = []
-    for x in range(8):
-        for y in range(8):
+
+def is_inside(x, y):
+    """Devuelve True si (x, y) está dentro del tablero."""
+    return 0 <= x < BOARD_SIZE and 0 <= y < BOARD_SIZE
+
+
+def legal_moves(board, player):
+    """Devuelve la lista de movimientos válidos (tuplas (x, y)) para `player`."""
+    moves = []
+    for x in range(BOARD_SIZE):
+        for y in range(BOARD_SIZE):
             if board[x, y] != EMPTY:
-                continue  # Sólo se puede mover hacia casillas vacías
-            if get_captured_discs(board, x, y, player):  # Si hay fichas que capturar al mover ahí
-                movs.append((x, y))  # Añade esa casilla a movimientos válidos
-    return movs
+                continue
+            if captured_discs(board, x, y, player):
+                moves.append((x, y))
+    return moves
 
-def apply_movement(board, x, y, player): # Aplica el movimiento del jugador hacia la posición (x, y) y cambia las fichas capturadas
+
+def apply_move(board, x, y, player):
+    """Coloca la pieza del `player` en (x, y) y voltea las piezas capturadas."""
     board[x, y] = player
-    for fx, fy in get_captured_discs(board, x, y, player):
-        board[fx, fy] = player  # Cambia fichas atrapadas del oponente a las del jugador
+    for fx, fy in captured_discs(board, x, y, player):
+        board[fx, fy] = player
 
-def get_captured_discs(board, x, y, player): # Devuelve la lista de fichas del oponente que serían capturadas si el jugador coloca ficha en (x, y)
-    opponent = 3 - player  # Si jugador es blanco(1), oponente es negro(2) y viceversa
+
+def captured_discs(board, x, y, player):
+    """Calcula y devuelve la lista de casillas del oponente que quedarían capturadas.
+
+    Recorre las 8 direcciones y acumula fichas enemigas que quedan flanqueadas.
+    """
+    opponent = 3 - player
     captured = []
 
-    for dx, dy in DIRECTIONS:  # Para cada dirección alrededor de la casilla
+    for dx, dy in DIRECTIONS:
         nx, ny = x + dx, y + dy
-        path = []  # Lista temporal para guardar fichas capturables en esta dirección
-        while inside_board(nx, ny) and board[nx, ny] == opponent:
-            path.append((nx, ny))  # Añade ficha del oponente al camino
+        path = []
+        while is_inside(nx, ny) and board[nx, ny] == opponent:
+            path.append((nx, ny))
             nx += dx
             ny += dy
-        # Si tras una o más fichas del oponente, encontramos una ficha del jugador, se capturan las del path
-        if path and inside_board(nx, ny) and board[nx, ny] == player:
+        if path and is_inside(nx, ny) and board[nx, ny] == player:
             captured.extend(path)
 
     return captured
 
-def count_discs(board):
+
+def count_pieces(board):
+    """Devuelve una tupla (num_blancas, num_negras)."""
     return np.count_nonzero(board == WHITE), np.count_nonzero(board == BLACK)
 
-def is_board_full(board):
-    return np.all(board != 0)  # Si hay alguna casilla con 0, significa que está libre
 
-def is_game_finished(board):
-    if is_board_full(board):  # Termina si el tablero está lleno
-        return True  # Evita calcular movimientos válidos si no quedan casillas libres
-    return len(valid_movements(board, 1)) == 0 and len(valid_movements(board, 2)) == 0 # Termina si ninguno de los dos jugadores tiene movimientos válidos
+def board_full(board):
+    """True si no hay casillas vacías."""
+    return np.all(board != EMPTY)
 
-def decide_winner(board): # Decide el ganador contando las fichas y mostrando el resultado por pantalla
-    num_white, num_black = count_discs(board)  # Gana el jugador con más fichas
+
+def game_finished(board):
+    """True si el juego ha terminado: tablero lleno o ninguno tiene movimientos."""
+    if board_full(board):
+        return True
+    return len(legal_moves(board, WHITE)) == 0 and len(legal_moves(board, BLACK)) == 0
+
+
+def evaluate_winner(board):
+    """Cuenta piezas, muestra el recuento y devuelve el ganador.
+
+    Devuelve `WHITE`, `BLACK` o 0 en caso de empate.
+    """
+    num_white, num_black = count_pieces(board)
     print(f"Fichas blancas: {num_white}, fichas negras: {num_black}")
-    if num_white == num_black:
-        return 0  # Empate
-    return WHITE if num_white > num_black else BLACK
-
-def get_winner(board): # Igual que decide_winner pero sin imprimir, útil para las simulaciones
-    num_white, num_black = count_discs(board)
     if num_white == num_black:
         return 0
     return WHITE if num_white > num_black else BLACK
+
+
+def winner_without_print(board):
+    """Como `evaluate_winner` pero sin imprimir el recuento (útil para simulaciones)."""
+    num_white, num_black = count_pieces(board)
+    if num_white == num_black:
+        return 0
+    return WHITE if num_white > num_black else BLACK
+
+
+# Wrappers para mantener compatibilidad con código existente
+# (se mantienen los nombres originales mientras internamente usamos los nuevos nombres).
+create_board = initialize_board
+show_board = display_board
+inside_board = is_inside
+valid_movements = legal_moves
+apply_movement = apply_move
+get_captured_discs = captured_discs
+count_discs = count_pieces
+is_board_full = board_full
+is_game_finished = game_finished
+decide_winner = evaluate_winner
+get_winner = winner_without_print
