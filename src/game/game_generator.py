@@ -186,7 +186,7 @@ if __name__ == "__main__":
 
     while True:
         try:
-            choice = int(input("1) agente vs sí mismo  2) agente vs aleatorio  3) agente NN vs agente anterior: "))
+            choice = int(input("Escoge entre simular datos con el agente jugando contra sí mismo  1), el agente jugando contra un oponente que escoge movimientos aleatorios (2) o el agente con red neuronal contra uno sin red (3): "))
             if choice in (1, 2, 3):
                 simulation_function = simulate_self_play if choice == 1 else simulate_vs_random if choice == 2 else simulate_vs_previous
                 break
