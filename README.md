@@ -1,4 +1,4 @@
-Proyecto IAIS 24-25: Búsqueda adversaria - Aprendiendo a jugar a Otelo
+Proyecto IAIS 25-26: Búsqueda adversaria - Aprendiendo a jugar a Otelo
 
 Nuno José del Pino Escalante y Javier Gutiérrez Pastor
 
