@@ -1,52 +1,33 @@
 \documentclass[conference,a4paper]{IEEEtran}
 
-% Escritura mejorada de fórmulas matemáticas
+\usepackage[T1]{fontenc}
+\usepackage[spanish]{babel}
+
 \usepackage{amsmath}
-
-% Inserción de gráficos
 \usepackage{graphicx}
-
-% Escritura de pseudocódigo
 \usepackage[kw]{pseudo}
-
-% Escritura mejorada de tablas
 \usepackage{booktabs}
-
-% Escritura mejorada de citas bibliográficas
 \usepackage{cite}
-
-% Inserción de enlaces
 \usepackage{hyperref}
-
 \usepackage{float}
-
 \usepackage{titlesec}
 
-\titlespacing*{\section}
-{2pt}      % Sangría izquierda
-{2pt}     % Espacio *antes* del título
-{1pt}      % Espacio *después* del título
+\titlespacing*{\section}{2pt}{2pt}{1pt}
+\titlespacing*{\subsection}{2pt}{2pt}{1pt}
 
-\titlespacing*{\subsection}
-{2pt}{2pt}{1pt}
-
-% Macros traducidas
 \def\contentsname{Índice general}
 \def\listfigurename{Índice de figuras}
 \def\listtablename{Índice de tablas}
 \def\refname{Referencias}
 \def\indexname{Índice alfabético}
 \def\figurename{Fig.}
-\def\pseudoname{Pseudocodigo}
+\def\pseudoname{Pseudocódigo}
 \def\tablename{TABLA}
 \def\partname{Parte}
 \def\appendixname{Apéndice}
 \def\abstractname{Resumen}
-% IEEE specific names
 \def\IEEEkeywordsname{Palabras clave}
 \def\IEEEproofname{Demostración}
-
-\setlength{\parskip}{0.5em}
 
 \begin{document}
 
@@ -72,8 +53,6 @@
 
 \maketitle
 
-
-% Resumen
 \begin{abstract}
   Este trabajo tiene como objetivo el desarrollo de un agente capaz de jugar a Otelo utilizando una combinación de técnicas de búsqueda y aprendizaje profundo. 
 Como base del agente se emplea el algoritmo Monte Carlo Tree Search (MCTS) utilizando el enfoque Upper Confidence Bounds for Trees (UCT), encargado de explorar las posibles jugadas y seleccionar aquellas que parecen más prometedoras. 
@@ -83,15 +62,11 @@ Una vez entrenada, esta red se utiliza para evaluar estados del tablero durante 
 
 Por último, se realizan diferentes experimentos para analizar tanto la calidad de las predicciones de la red neuronal como el rendimiento general del agente. 
 Los resultados obtenidos permiten estudiar las ventajas y limitaciones de combinar UCT y aprendizaje profundo en el juego de Otelo. 
-
 \end{abstract}
 
-
-% Palabras claves
 \begin{IEEEkeywords}
   Otelo, MCTS, UCT, Red Neuronal, Agente, Modelo, Inteligencia Artificial. 
 \end{IEEEkeywords}
-
 
 \section{Introducción} 
 
@@ -144,58 +119,64 @@ Finalmente, el agente selecciona la acción asociada al nodo que ha mostrado mej
 
 El Pseudocódigo 1 muestra el funcionamiento general de la variante UCT empleada en este trabajo. 
 
-\begin{figure}[H]
-  \begin{pseudo}
-    \textbf{Función UCTSEARCH}($s_0$) \\ 
-    \> Crear nodo raíz $v_0$ con estado $s_0$ \\ 
-    \> \textbf{Mientras} esté dentro del presupuesto computacional \\ 
-    \> \> $v_i \leftarrow \text{TREEPOLICY}(v_0)$ \\ 
-    \> \> $\Delta \leftarrow \text{DEFAULTPOLICY}(s(v_i))$ \\ 
-    \> \> \text{BACKUP}$(v_i, \Delta)$ \\ 
-    \> \textbf{Devolver} $a(\text{BESTCHILD}(v_0, 0))$ \\ 
+\newpage
 
-    \\
+\begin{figure}[t]
+  \noindent
+  \begin{minipage}{\columnwidth}
+    \begin{pseudo}[compact, left-margin=0pt, label-align=l]
+      \textbf{Función UCTSEARCH}($s_0$) \\ 
+      \> Crear nodo raíz $v_0$ con estado $s_0$ \\ 
+      \> \textbf{Mientras} esté dentro del presupuesto computacional \\ 
+      \> \> $v_i \leftarrow \text{TREEPOLICY}(v_0)$ \\ 
+      \> \> $\Delta \leftarrow \text{DEFAULTPOLICY}(s(v_i))$ \\ 
+      \> \> \text{BACKUP}$(v_i, \Delta)$ \\ 
+      \> \textbf{Devolver} $a(\text{BESTCHILD}(v_0, 0))$ \\ 
 
-    \textbf{Función TREEPOLICY}($v$) \\ 
-    \> \textbf{Mientras} $v$ es no terminal \\ 
-    \> \> \textbf{Si} $v$ no está totalmente expandido \\ 
-    \> \> \> \textbf{Devolver} \text{EXPAND}($v$) \\ 
-    \> \> \textbf{Sino} \\ 
-    \> \> \> $v \leftarrow \text{BESTCHILD}(v, C_p)$ \\ 
-    \> \textbf{Devolver} $v$ \\ 
+      \\
 
-    \\
+      \textbf{Función TREEPOLICY}($v$) \\ 
+      \> \textbf{Mientras} $v$ es no terminal \\ 
+      \> \> \textbf{Si} $v$ no está totalmente expandido \\ 
+      \> \> \> \textbf{Devolver} \text{EXPAND}($v$) \\ 
+      \> \> \textbf{Sino} \\ 
+      \> \> \> $v \leftarrow \text{BESTCHILD}(v, C_p)$ \\ 
+      \> \textbf{Devolver} $v$ \\ 
 
-    \textbf{Función EXPAND}($v$) \\ 
-    \> Escoger $a \in$ acciones sin intentar de $A(s(v))$ \\ 
-    \> Añadir nuevo hijo $v'$ a $v$ \\ 
-    \> \> Con $s(v') = f(s(v), a)$ \\ 
-    \> \> Y $a(v') = a$ \\ 
-    \> \textbf{Devolver} $v'$ \\ 
+      \\
 
-    \\
+      \textbf{Función EXPAND}($v$) \\ 
+      \> Escoger $a \in$ acciones sin intentar de $A(s(v))$ \\ 
+      \> Añadir nuevo hijo $v'$ a $v$ \\ 
+      \> \> Con $s(v') = f(s(v), a)$ \\ 
+      \> \> Y $a(v') = a$ \\ 
+      \> \textbf{Devolver} $v'$ \\ 
 
-    \textbf{Función BESTCHILD}($v, c$) \\ 
-    \> \textbf{Devolver} \mbox{$\displaystyle \arg\max_{v' \in \text{hijos de } v} \left( \frac{Q(v')}{N(v')} + c \sqrt{\frac{2 \ln N(v)}{N(v')}} \right)$} \\ 
+      \\
 
-    \\
+      \textbf{Función BESTCHILD}($v, c$) \\ 
+      \> \textbf{Devolver} \mbox{$\displaystyle \arg\max_{v' \in \text{hijos de } v} \left( \frac{Q(v')}{N(v')} + c \sqrt{\frac{2 \ln N(v)}{N(v')}} \right)$} \\ 
 
-    \textbf{Función DEFAULTPOLICY}($s$) \\ 
-    \> \textbf{Mientras} $s$ no es terminal \\ 
-    \> \> Escoger $a \in A(s)$ de manera \\ 
-    \> \> uniformemente aleatoria \\ 
-    \> \> $s \leftarrow f(s,a)$ \\ 
-    \> \textbf{Devolver} recompensa para el estado $s$ \\ 
+      \\
 
-    \\
+      \textbf{Función DEFAULTPOLICY}($s$) \\ 
+      \> \textbf{Mientras} $s$ no es terminal \\ 
+      \> \> Escoger $a \in A(s)$ de manera \\ 
+      \> \> uniformemente aleatoria \\ 
+      \> \> $s \leftarrow f(s,a)$ \\ 
+      \> \textbf{Devolver} recompensa para el estado $s$ \\ 
 
-    \textbf{Función BACKUP}($v, \Delta$) \\ 
-    \> \textbf{Mientras} $v$ es no nulo \\ 
-    \> \> $N(v) \leftarrow N(v) + 1$ \\ 
-    \> \> $Q(v) \leftarrow Q(v) + \Delta$ \\ 
-    \> \> $\Delta \leftarrow -\Delta$ \\ 
-    \> \> $v \leftarrow$ padre de $v$ 
-  \end{pseudo}
+      \\
+
+      \textbf{Función BACKUP}($v, \Delta$) \\ 
+      \> \textbf{Mientras} $v$ es no nulo \\ 
+      \> \> $N(v) \leftarrow N(v) + 1$ \\ 
+      \> \> $Q(v) \leftarrow Q(v) + \Delta$ \\ 
+      \> \> $\Delta \leftarrow -\Delta$ \\ 
+      \> \> $v \leftarrow$ padre de $v$ 
+    \end{pseudo}
+  \end{minipage}
+  \vspace{0.5em}
   \label{pcd:uct}
 \end{figure}
 
@@ -205,18 +186,17 @@ Su objetivo es equilibrar dos aspectos fundamentales del proceso de búsqueda: l
 
 Para ello, a cada nodo del árbol se le asigna un valor calculado mediante la ecuación (1): 
 
-donde: 
 \begin{equation}
 UCT(v)=\frac{Q(v)}{N(v)}+C*\sqrt{\frac{ln(N(p))}{N(v)}} 
 \end{equation}
 
-$Q(v)$ representa la recompensa acumulada obtenida por el nodo (v). 
-
-$N(v)$ indica el número de veces que el nodo ha sido visitado. 
-
-$N(p)$ corresponde al número de visitas realizadas al nodo padre. 
-
-C es una constante que controla el equilibrio entre exploración y explotación. 
+donde: 
+\begin{itemize}
+\item $Q(v)$ representa la recompensa acumulada obtenida por el nodo (v). 
+\item $N(v)$ indica el número de veces que el nodo ha sido visitado. 
+\item $N(p)$ corresponde al número de visitas realizadas al nodo padre. 
+\item $C$ es una constante que controla el equilibrio entre exploración y explotación. 
+\end{itemize}
 
 En este trabajo se ha utilizado el valor $C=\frac{1}{\sqrt{2}}$, por lo que la expresión empleada durante la búsqueda queda representada por la ecuación (2): 
 \begin{equation}
@@ -270,7 +250,7 @@ Una vez verificada su correcta operación, esta implementación se utilizó como
 El tablero se representa mediante una matriz de $8\times8$ posiciones, donde cada casilla puede encontrarse vacía o contener una ficha de alguno de los dos jugadores. 
 A partir de esta representación se implementan las operaciones necesarias para determinar los movimientos legales disponibles en cada turno, aplicar las capturas correspondientes y actualizar el estado del tablero tras cada jugada. 
 
-\begin{figure}[H]
+\begin{figure}[htbp]
   \centering
   \includegraphics[width=0.8\columnwidth]{interfaz}
   \caption{Fig 1. Interfaz del juego, mostrando el turno del jugador} 
@@ -321,7 +301,7 @@ Esto es posible gracias al módulo multiprocessing de Python~\cite{b11}.
 En particular, se utiliza la clase Pool, que distribuye la simulación de partidas entre varios procesos independientes, aprovechando los distintos núcleos disponibles y acelerando considerablemente la generación de datos. 
 
 \subsection{Construcción del conjunto de entrenamiento} 
-Los estados obtenidos durante las partidas generadas mediante el autojuego deben transformarse a un formato adecuado para ser procesados por la red neuronal. 
+Los estados obtenidos durante las partidas generadas mediante autojuego deben transformarse a un formato adecuado para ser procesados por la red neuronal. 
 Para ello, cada posición del juego se convierte en una representación matricial que conserva toda la información relevante del tablero. 
 
 La entrada utilizada por la red está formada por un tensor de dimensiones $8\times8\times4$, donde cada uno de los cuatro canales codifica una característica diferente del estado del juego. 
@@ -410,7 +390,7 @@ Con el fin de aumentar la diversidad de posiciones presentes en el conjunto de d
 También se incluyen enfrentamientos contra agentes con comportamientos más simples, capaces de producir configuraciones del tablero menos frecuentes y que dificilmente aparecerían en partidas entre agentes más avanzados. 
 Esta estrategia permite exponer a la red neuronal a una mayor variedad de situaciones de juego y favorece su capacidad de generalización. 
 
-A medida que se generan nuevas partidas, el conjunto de entrenamiento puede ampliarse incorporando los nuevos ejemplos obtenidos o reemplazarse completamente por un conjunto más reciente, dependiendo de la configuración utilizada durante la generación de datos. 
+A medida que se generan nuevas partidas, el conjunto de entrenamiento puede ampliarse incorporando los nuevos ejemplos obtenidos o reemplazarse completamente por un conjunto más reciente, dependiendo de la configuración utilizada durante la generation de datos. 
 
 La última fase del proceso consiste en generar partidas mediante autojuego entre agentes que ya incorporan la red neuronal entrenada. 
 En este escenario surge un inconveniente habitual: al utilizar siempre las mismas valoraciones para estados idénticos o muy similares, el agente tiende a repetir las mismas secuencias de movimientos, reduciendo considerablemente la diversidad de ejemplos generados. 
@@ -447,7 +427,7 @@ Tras realizar las pruebas se obtienen los siguientes resultados: Para la primera
 Por otro lado, para la segunda prueba se obtienen 370 victorias, llevando a un porcentaje de victorias del 74\%. 
 
 A partir de los resultados obtenidos pueden extraerse varias conclusiones relevantes. 
-En primer lugar, el agente demuestra ser capaz de derrotar de forma consistente a un oponente que selecciona movimientos de manera aleatoria, lo que indica que la estrategia basada en UCT es capaz de identificar decisiones razonables y aprovechar las debilidades de jugadores poco sofisticados. 
+En primer lugar, el agente demuestra ser capaz de derrotar de forma consistente a un oponente que selecciona movimientos de manera aleatoria, lo que indica que la strategy basada en UCT es capaz de identificar decisiones razonables y aprovechar las debilidades de jugadores poco sofisticados. 
 
 También se observa una mejora significativa al incrementar el número de iteraciones disponibles durante la búsqueda. 
 El aumento del porcentaje de victorias al pasar de 500 a 1000 iteraciones pone de manifiesto que el rendimiento del agente depende en gran medida del presupuesto computacional asignado. 
