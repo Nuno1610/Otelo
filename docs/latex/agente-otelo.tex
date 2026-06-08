@@ -50,24 +50,24 @@
 
 \begin{document}
 
-\title{Desarrollo de un Agente Inteligente para Otelo basado en MCTS-UCT y Redes Neuronales}
+\title{Desarrollo de un Agente Inteligente para Otelo basado en MCTS-UCT y Redes Neuronales} 
 
 \author{
-  \IEEEauthorblockN{Nuno José del Pino Escalante}
+  \IEEEauthorblockN{Nuno José del Pino Escalante} 
   \IEEEauthorblockA{
-    \textit{Dpto. Ciencias de la Computación e Inteligencia Artificial}\\
-    \textit{Universidad de Sevilla}\\
-    Sevilla, España\\
-    nundelesc@alum.us.es}
+    \textit{Dpto. Ciencias de la Computación e Inteligencia Artificial}\\ 
+    \textit{Universidad de Sevilla}\\ 
+    Sevilla, España\\ 
+    nundelesc@alum.us.es} 
   
   \and
   
-  \IEEEauthorblockN{Javier Gutiérrez Pastor}
+  \IEEEauthorblockN{Javier Gutiérrez Pastor} 
   \IEEEauthorblockA{
-    \textit{Dpto. Ciencias de la Computación e Inteligencia Artificial}\\
-    \textit{Universidad de Sevilla}\\
-    Sevilla, España\\
-    javgutpas@alum.us.es}
+    \textit{Dpto. Ciencias de la Computación e Inteligencia Artificial}\\ 
+    \textit{Universidad de Sevilla}\\ 
+    Sevilla, España\\ 
+    javgutpas@alum.us.es} 
 }
 
 \maketitle
@@ -75,441 +75,510 @@
 
 % Resumen
 \begin{abstract}
-  Este trabajo tiene como objetivo el desarrollo de un agente inteligente que sea capaz de jugar al juego Otelo 
-  de manera óptima, es decir, siendo capaz de encontrar las mejores jugadas posibles en cada situación. Esto 
-  se realizará mediante la aplicación del algoritmo de Monte Carlo Tree Search (MCTS), siguiendo Upper Confidence 
-  Bound for Trees (UCT). Así mismo, se comparará la eficacia del agente usando una política de selección aleatoria, 
-  frente al uso de una red neuronal para predecir la mejor acción posible.
-  
-  Los resultados obtenidos a lo largo de las pruebas realizadas evidencian la efectividad de un agente que implementa el algoritmo UCT, 
-  así como el potencial que puede tener si se combina con una red neuronal entrenada adecuadamente.
+  Este trabajo tiene como objetivo el desarrollo de un agente capaz de jugar a Otelo utilizando una combinación de técnicas de búsqueda y aprendizaje profundo. 
+Como base del agente se emplea el algoritmo Monte Carlo Tree Search (MCTS) utilizando el enfoque Upper Confidence Bounds for Trees (UCT), encargado de explorar las posibles jugadas y seleccionar aquellas que parecen más prometedoras. 
+
+Con el objetivo de mejorar la toma de decisiones, se entrena una red neuronal a partir de partidas generadas automáticamente por el propio agente. 
+Una vez entrenada, esta red se utiliza para evaluar estados del tablero durante la búsqueda, sustituyendo las simulaciones aleatorias empleadas inicialmente. 
+
+Por último, se realizan diferentes experimentos para analizar tanto la calidad de las predicciones de la red neuronal como el rendimiento general del agente. 
+Los resultados obtenidos permiten estudiar las ventajas y limitaciones de combinar UCT y aprendizaje profundo en el juego de Otelo. 
 
 \end{abstract}
 
 
 % Palabras claves
 \begin{IEEEkeywords}
-  Inteligencia Artificial, Otelo, MCTS, UCT, Red Neuronal, Agente, Modelo.
+  Otelo, MCTS, UCT, Red Neuronal, Agente, Modelo, Inteligencia Artificial. 
 \end{IEEEkeywords}
 
 
-\section{Introducción}
+\section{Introducción} 
 
-Otelo es un juego de estrategia por turnos para dos jugadores, disputado en un tablero de 8×8 casillas. 
-El objetivo consiste en capturar las fichas, o discos, del oponente, de modo que el ganador sea aquel que tenga más 
-discos de su color en el tablero al finalizar la partida. Así mismo, solo se pueden realizar movimientos hacia casillas vacías 
-y que, a su vez, impliquen la captura de discos del oponente, de tal manera que, si ninguno de los jugadores dispone de 
-movimientos válidos, o si el tablero se llena por completo directamente, la partida se da por finalizada. A pesar de sus reglas sencillas, 
-Otelo presenta un espacio de estados bastante complejo, lo que lo convierte en un entorno idóneo para el desarrollo y evaluación 
-de algoritmos de inteligencia artificial.
+Otelo, también conocido como Reversi, es un juego de estrategia para dos jugadores que se desarrolla sobre un tablero de 8x8 casillas. 
+El objetivo consiste en tener la mayoría de las fichas de tu color sobre el tablero al finalizar la partida. 
+Solo se pueden colocar fichas en casillas vacías de manera que, en línea recta (horizontal, vertical o diagonal) una o más fichas del oponente queden atrapadas, haciendo así que éstas pasen a ser del color del jugador que hizo la jugada. 
+Si ninguno de los jugadores puede realizar un movimiento válido o si todas las casillas del tablero están ocupadas, la partida finaliza. 
+Aunque sus reglas son relativamente sencillas, la gran cantidad de posiciones posibles y la necesidad de planificar movimientos a largo plazo hacen que resulte un entorno muy interesante para aplicar técnicas de inteligencia artificial. 
 
-A lo largo de los años, se han empleado diversas técnicas para desarrollar agentes capaces de jugar a juegos 
-similares, destacando especialmente los enfoques que combinan métodos de búsqueda y aprendizaje profundo. 
-Dos de los ejemplos más conocidos son los programas “AlphaGo”~\cite{b1} y “AlphaZero”~\cite{b2}, diseñados con propósitos similares 
-a los de este trabajo, aunque orientados a juegos más complejos como el go, shogi y ajedrez.
+En los últimos años, los juegos de tablero como go, shogi o ajedrez han servido como banco de pruebas para numerosos algoritmos de toma de decisiones. 
+Entre ellos destacan los métodos de búsqueda adversaria y, más recientemente, los enfoques que combinan búsqueda y aprendizaje profundo. 
+Sistemas como "AlphaGo"~\cite{b1} o "AlphaZero"~\cite{b2} demuestran que la utilización conjunta de estas técnicas puede dar lugar a agentes capaces de alcanzar un nivel de juego muy alto. 
 
-El objetivo principal de este trabajo es demostrar que el uso de un algoritmo de búsqueda como \emph{Monte Carlo Tree Search} (MCTS) 
-puede dar lugar a un agente competente en Otelo. Además, se pretende evaluar en qué medida una política basada en las predicciones 
-de una red neuronal puede sustituir eficazmente a la política de selección aleatoria propia de UCT, mejorando así la calidad de las decisiones del agente. 
-La principal contribución del trabajo consiste en una arquitectura funcional capaz de generar datos, entrenar modelos y refinar iterativamente el rendimiento del agente 
-mediante ciclos de autoaprendizaje.
+Siguiendo esta idea, el objetivo principal de este trabajo es desarrollar un agente para Otelo basado en Monte Carlo Tree Search (MCTS), utilizando la estrategia Upper Confidence Bounds for Trees (UCT) para guiar la exploración del árbol de búsqueda. 
+En una primera fase, se implementa un agente basado exclusivamente en UCT, que posteriormente se utiliza para generar partidas mediante autojuego. 
+Para ello, el agente disputa partidas contra sí mismo, seleccionando movimientos mediante el algoritmo de búsqueda implementado. 
 
-Inicialmente, se propone un diseño sencillo del agente basado únicamente en UCT para la toma de decisiones. Este primer agente será utilizado 
-para generar un conjunto de datos con el que se entrenará una red neuronal que potenciará la toma de decisiones en el algoritmo. 
-Posteriormente, se llevarán a cabo sucesivos ciclos de juego automático y reentrenamiento con el fin de incrementar progresivamente la eficacia y la habilidad del agente.
+A partir de estas partidas se construye un conjunto de datos de entrenamiento formado por estados del tablero y sus correspondientes resultados finales obtenidos. 
+Con esta información se entrena una red neuronal capaz de estimar la calidad de una posición de juego. 
+Una vez entrenada, la red se integra en el agente con el objetivo de mejorar la evaluación de los estados explorados durante la búsqueda. 
 
-Este documento se organiza en seis secciones, incluyendo la presente introducción. En la Sección II se describen en mayor detalle las técnicas empleadas y se revisan algunos 
-trabajos relacionados. En la Sección III se expone la metodología seguida y se detalla la implementación del sistema. La Sección IV está dedicada a los experimentos realizados 
-y al análisis de los resultados obtenidos. En la Sección V se presentan las conclusiones del proyecto, así como posibles líneas futuras de mejora. Finalmente, en la sección VI 
-se encuentra una declaración de uso de IA generativa. Al final del documento se incluyen las referencias bibliográficas utilizadas.
+Además del desarrollo del agente, este trabajo pretende analizar hasta qué punto la incorporación de la red neuronal puede reemplazar las simulaciones aleatorias utilizadas por UCT, proporcionando evaluaciones más precisas y favoreciendo la toma de decisiones del agente. 
+Para ello, se comparan distintas configuraciones del agente y se estudia tanto la calidad de las predicciones realizadas por la red como el comportamiento observado durante las partidas. 
 
-\section{Preliminares}
+Este documento se organiza en seis secciones, incluyendo la presente introducción. 
+En la Sección II se describen en mayor detalle las técnicas empleadas y se revisan algunos trabajos relacionados. 
+En la Sección III se expone la metodología seguida y se detalla la implementación del sistema. 
+La Sección IV está dedicada a los experimentos realizados y al análisis de los resultados obtenidos. 
+En la Sección V se presentan las conclusiones del proyecto, así como posibles líneas futuras de mejora. 
+Finalmente, la sección VI incluye la declaración de uso de inteligencia artificial generativa. 
+Las referencias bibliográficas utilizadas se presentan al final del documento. 
 
-\subsection{Métodos empleados}
+\section{Preliminares} 
 
-El desarrollo del agente propuesto se basa en la combinación de dos enfoques principales: el método de búsqueda \emph{Monte Carlo Tree Search} (MCTS), 
-reforzado mediante la técnica \emph{Upper Confidence Bounds for Trees} (UCT), y una red neuronal entrenada mediante auto juego. 
+\subsection{Monte Carlo Tree Search} 
+Monte Carlo Tree Search (MCTS) es un algoritmo de búsqueda ampliamente utilizado para la toma de decisiones en problemas donde el espacio de estados es muy grande. 
+Su funcionamiento se basa en la construcción progresiva de un árbol de búsqueda mediante la realización de múltiples simulaciones a partir del estado de juego actual. 
 
-A continuación, se detallan estos métodos y técnicas utilizados:
-
-Se pueden usar listas por puntos como sigue:
+Cada iteración de MCTS se compone de cuatro fases principales: 
 \begin{itemize}
-\item \emph{Monte Carlo Tree Search} (MCTS): Es un método de búsqueda que toma decisiones óptimas en dominios complejos mediante simulaciones aleatorias. Consiste en realizar exploraciones del espacio de decisiones, construyendo un árbol de búsqueda cuya expansión está guiada por los resultados obtenidos durante dichas simulaciones. Además, se trata de un algoritmo estadístico anytime, es decir, puede interrumpirse en cualquier momento y ofrecer una solución válida, mejorando progresivamente su rendimiento cuanto más tiempo de cómputo se le conceda. Además, su capacidad para operar con poco o ningún conocimiento específico del dominio lo hace particularmente atractivo en contextos como el de Otelo.
-\item \emph{Upper Confidence Bounds for Trees} (UCT): Enfoque de MCTS en el que se guía la selección de nodos combinando la recompensa media obtenida con una estimación del potencial inexplorado del nodo. Proporciona un equilibrio entre explotación y exploración, lo que mejora significativamente la eficiencia del algoritmo. En concreto, cada vez que un nodo debe seleccionar uno de sus hijos, se aplica la fórmula UCB1 para calcular un valor asociado a cada acción posible. Esta fórmula combina la recompensa promedio estimada de esa acción (en la que se basa la explotación) con un término de exploración, proporcionando así el equilibrio mencionado. Además, garantiza que todas las acciones serán exploradas al menos una vez, y que las más exitosas tenderán a ser seleccionadas con mayor frecuencia. UCT se ha consolidado como una de las variantes más exitosas de MCTS, siendo utilizada como componente central en sistemas como AlphaGo y AlphaZero, mencionados anteriormente. Su simplicidad, eficiencia y capacidad de generalización lo convierten en una elección especialmente adecuada para entornos como Otelo.
-\item Redes Neuronales Multicapa: Se utiliza una red neuronal de tipo \emph{feedforward} con varias capas ocultas, entrenada mediante aprendizaje automático supervisado, es decir, la salida pretendida del modelo para cada entrada de datos de entrenamiento es conocida, y se usa para evaluar las predicciones de la red~\cite{b3}. Este tipo de red permite aprender relaciones complejas entre entradas y salidas, transformando los datos progresivamente a través de capas interconectadas~\cite{b4}. En este proyecto, la red actúa como una política del agente, aprendiendo a predecir la posibilidad de victoria dado un estado del juego. Para ello, se entrena con datos recogidos en partidas generadas por el agente, sustituyendo así la política aleatoria por una basada en las predicciones de la red.
+\item Selección: Se recorre el árbol desde la raíz siguiendo la política de selección hasta alcanzar un nodo hoja o un nodo no completamente expandido. 
+\item Expansión: Se añaden nuevos nodos correspondientes a movimientos aún no explorados. 
+\item Simulación: Se estima el resultado de la partida a partir del estado alcanzado, es decir se juega una partida simulada desde el nuevo nodo hasta alcanzar un estado terminal. 
+\item Retropropagación: El resultado obtenido en la simulación se propaga hacia atrás actualizando las estadísticas de los nodos visitados. 
 \end{itemize}
 
-\subsection{Trabajo Relacionado}
+A medida que aumenta el número de simulaciones, el algoritmo dispone de más información para estimar la calidad de cada movimiento y seleccionar las acciones más prometedoras. 
+El proceso se repite hasta agotar el presupuesto computacional disponible. 
+Finalmente, el agente selecciona la acción asociada al nodo que ha mostrado mejor comportamiento durante la búsqueda. 
 
-Gran parte de este trabajo está basado en el artículo “A survey of Monte Carlo Tree Search Methods”~\cite{b5}, el cual ha proporcionado un entendimiento 
-del funcionamiento y utilidad del algoritmo MCTS junto con UCT en el contexto de este trabajo. Así mismo, se ha usado tanto el pseudocódigo de UCT como 
-las enseñanzas proporcionadas por este artículo para la implementación del agente inteligente.
-
-Así mismo, como ya se ha mencionado anteriormente, existen aproximaciones similares para juegos más complejos de abordar computacionalmente. 
-En concreto, los artículos sobre “AlphaGo”~\cite{b6} y “AlphaZero”~\cite{b7}, son bastante recomendables para aprender el impacto de un correcto uso del \emph{Deep Learning},
-o aprendizaje profundo, en la búsqueda adversaria, permitiendo la creación de agentes sumamente hábiles en este tipo de juegos.
-
-Por último, se hace especial mención a un proyecto reciente bastante similar a este~\cite{b8}, que también propone un agente inteligente capaz de jugar a Otelo, 
-solo que utilizando otras técnicas como el algoritmo minimax y la poda alfa-beta.
-
-\section{Metodología}
-
-En primer lugar, se desarrolló un sistema con las reglas del juego, que permitiera jugar partidas de forma simple a través de la interfaz de línea de comandos, 
-en la que se le pregunta al usuario por la jugada que desea realizar. Evidentemente, dado que no se había implementado el agente desde un principio, el usuario debía 
-jugar contra sí mismo, algo más que suficiente para comprobar el correcto funcionamiento del juego, de tal manera que pudiera ser utilizado para la generación de 
-datos de ejemplo a través de la simulación de partidas.
-
-\begin{figure}[H]
-  \centering
-  \includegraphics{interfaz}
-  \caption{Interfaz del juego, mostrando el turno del jugador}
-  \label{fig:interfaz}
-\end{figure}
-
-Posteriormente, se realizó la implementación del agente siguiendo el pseudocódigo proporcionado en el artículo sobre Monte Carlo mencionado anteriormente. 
-Este agente actuó como punto de partida para simular las partidas que proporcionarían los datos de entrenamiento. Desde un nodo que representa el estado del tablero 
-y el jugador activo en ese turno de la partida, realiza tantas simulaciones de la partida como se le indique mediante un parámetro, manteniendo un equilibrio entre exploración y 
-explotación para la generación de un árbol de búsqueda. Una vez encontrado un nodo terminal, en el que la partida ha acabado, retropropaga 
-el número de visitas de los distintos nodos, así como la recompensa, que va cambiando de signo para reflejar el cambio de perspectiva que 
-sufre el juego al alternar turnos entre ambos jugadores, de tal manera que, si un resultado ha sido bueno para el jugador activo en un nodo,
-habrá sido malo para el jugador del nodo padre. Este proceso se lleva a cabo de manera reiterada, de tal manera que, al terminar una iteración, 
-se vuelva al nodo raíz para seguir expandiendo el árbol de búsqueda. Se realizarán tantas iteraciones como se indique, teniendo en cuenta que 
-un mayor número de iteraciones aumenta la posibilidad de tomar una decisión óptima, pero que a su vez aumenta en gran medida el coste computacional y, 
-en consecuencia, los tiempos de espera. Por esta razón, es importante encontrar un número de iteraciones que proporcione un balance adecuado 
-entre ambos conceptos. Además, dada la simplicidad intencionada para esta primera versión del agente, utiliza una política de selección aleatoria, 
-lo que hace que no siempre encuentre las jugadas óptimas, especialmente si el número de iteraciones no es suficiente para realizar una 
-exploración del árbol suficiente. En concreto, el agente sigue el siguiente pseudocódigo:
+El Pseudocódigo 1 muestra el funcionamiento general de la variante UCT empleada en este trabajo. 
 
 \begin{figure}[H]
   \begin{pseudo}
-    \textbf{Función UCTSEARCH}($s_0$) \\
-    \> Crear nodo raíz $v_0$ con estado $s_0$ \\
-    \> \textbf{Mientras} esté dentro del presupuesto computacional \\
-    \> \> $v_i \leftarrow \text{TREEPOLICY}(v_0)$ \\
-    \> \> $\Delta \leftarrow \text{DEFAULTPOLICY}(s(v_i))$ \\
-    \> \> \text{BACKUP}$(v_i, \Delta)$ \\
-    \> \textbf{Devolver} $a(\text{BESTCHILD}(v_0, 0))$ \\
+    \textbf{Función UCTSEARCH}($s_0$) \\ 
+    \> Crear nodo raíz $v_0$ con estado $s_0$ \\ 
+    \> \textbf{Mientras} esté dentro del presupuesto computacional \\ 
+    \> \> $v_i \leftarrow \text{TREEPOLICY}(v_0)$ \\ 
+    \> \> $\Delta \leftarrow \text{DEFAULTPOLICY}(s(v_i))$ \\ 
+    \> \> \text{BACKUP}$(v_i, \Delta)$ \\ 
+    \> \textbf{Devolver} $a(\text{BESTCHILD}(v_0, 0))$ \\ 
 
     \\
 
-    \textbf{Función TREEPOLICY}($v$) \\
-    \> \textbf{Mientras} $v$ es no terminal \\
-    \> \> \textbf{Si} $v$ no está totalmente expandido \\
-    \> \> \> \textbf{Devolver} \text{EXPAND}($v$) \\
-    \> \> \textbf{Sino} \\
-    \> \> \> $v \leftarrow \text{BESTCHILD}(v, C_p)$ \\
-    \> \textbf{Devolver} $v$ \\
+    \textbf{Función TREEPOLICY}($v$) \\ 
+    \> \textbf{Mientras} $v$ es no terminal \\ 
+    \> \> \textbf{Si} $v$ no está totalmente expandido \\ 
+    \> \> \> \textbf{Devolver} \text{EXPAND}($v$) \\ 
+    \> \> \textbf{Sino} \\ 
+    \> \> \> $v \leftarrow \text{BESTCHILD}(v, C_p)$ \\ 
+    \> \textbf{Devolver} $v$ \\ 
 
     \\
 
-    \textbf{Función EXPAND}($v$) \\
-    \> Escoger $a \in$ acciones sin intentar de $A(s(v))$ \\
-    \> Añadir nuevo hijo $v'$ a $v$ \\
-    \> \> Con $s(v') = f(s(v), a)$ \\
-    \> \> Y $a(v') = a$ \\
-    \> \textbf{Devolver} $v'$ \\
+    \textbf{Función EXPAND}($v$) \\ 
+    \> Escoger $a \in$ acciones sin intentar de $A(s(v))$ \\ 
+    \> Añadir nuevo hijo $v'$ a $v$ \\ 
+    \> \> Con $s(v') = f(s(v), a)$ \\ 
+    \> \> Y $a(v') = a$ \\ 
+    \> \textbf{Devolver} $v'$ \\ 
 
     \\
 
-    \textbf{Función BESTCHILD}($v, c$) \\
-    \> \textbf{Devolver} $\displaystyle \arg\max_{v' \in \text{hijos de } v} \left( \frac{Q(v')}{N(v')} + c \sqrt{\frac{2 \ln N(v)}{N(v')}} \right)$ \\
+    \textbf{Función BESTCHILD}($v, c$) \\ 
+    \> \textbf{Devolver} \mbox{$\displaystyle \arg\max_{v' \in \text{hijos de } v} \left( \frac{Q(v')}{N(v')} + c \sqrt{\frac{2 \ln N(v)}{N(v')}} \right)$} \\ 
 
     \\
 
-    \textbf{Función DEFAULTPOLICY}($s$) \\
-    \> \textbf{Mientras} $s$ no es terminal \\
-    \> \> Escoger $a \in A(s)$ de manera \\
-    \> \> uniformemente aleatoria \\
-    \> \> $s \leftarrow f(s,a)$ \\
-    \> \textbf{Devolver} recompensa para el estado $s$ \\
+    \textbf{Función DEFAULTPOLICY}($s$) \\ 
+    \> \textbf{Mientras} $s$ no es terminal \\ 
+    \> \> Escoger $a \in A(s)$ de manera \\ 
+    \> \> uniformemente aleatoria \\ 
+    \> \> $s \leftarrow f(s,a)$ \\ 
+    \> \textbf{Devolver} recompensa para el estado $s$ \\ 
 
     \\
 
-    \textbf{Función BACKUP}($v, \Delta$) \\
-    \> \textbf{Mientras} $v$ es no nulo \\
-    \> \> $N(v) \leftarrow N(v) + 1$ \\
-    \> \> $Q(v) \leftarrow Q(v) + \Delta$ \\
-    \> \> $\Delta \leftarrow -\Delta$ \\
-    \> \> $v \leftarrow$ padre de $v$
+    \textbf{Función BACKUP}($v, \Delta$) \\ 
+    \> \textbf{Mientras} $v$ es no nulo \\ 
+    \> \> $N(v) \leftarrow N(v) + 1$ \\ 
+    \> \> $Q(v) \leftarrow Q(v) + \Delta$ \\ 
+    \> \> $\Delta \leftarrow -\Delta$ \\ 
+    \> \> $v \leftarrow$ padre de $v$ 
   \end{pseudo}
   \label{pcd:uct}
 \end{figure}
 
-Donde v es un nodo del árbol, s(v) es el estado del tablero en ese nodo, Q(v) es la recompensa total de 
-la simulación llegado ese nodo, N(v) es el número de veces que se ha visitado cada nodo, f(s, a) es la función 
-que aplica la acción al estado s y c es el término de exploración, que corresponde al siguiente valor: $c = \frac{1}{\sqrt{2}}.$
+\subsection{Upper Confidence Bounds for Trees} 
+Upper Confidence Bounds for Trees (UCT) es una variante de Monte Carlo Tree Search que emplea la estrategia Upper Confidence Bound (UCB) para decidir qué nodos explorar durante la fase de selección. 
+Su objetivo es equilibrar dos aspectos fundamentales del proceso de búsqueda: la exploración de movimientos poco visitados y la explotación de aquellos que han mostrado buenos resultados en simulaciones anteriores. 
 
-Cabe destacar que la implementación de dicho algoritmo en código debe ser ajustada, ya que se deben tener en cuenta aquellos nodos 
-en los que ninguna acción es posible para el jugador asociado, así como otros detalles causados por convenciones del lenguaje de 
-programación en el que se trabaja, pero el núcleo del algoritmo no cambia.
+Para ello, a cada nodo del árbol se le asigna un valor calculado mediante la ecuación (1): 
 
-Una vez implementado y comprobado el agente, se procede a la generación de datos para entrenar la red neuronal. Para ello, 
-se simulan partidas en las que el agente juega contra sí mismo, de tal manera que tras cada acción se guarda el estado del tablero, 
-que es etiquetado con –1, 0 o +1, en función de si el jugador activo en dicho estado perdió, empató o ganó la partida, respectivamente. 
-Además, se incluye información de quién era dicho jugador, para que la red pueda interpretar correctamente los datos. Este conjunto 
-de datos se convierte en un \emph{DataFrame} de \emph{Pandas}~\cite{b9}, y es almacenado en un archivo \emph{Pickle} (.pkl)~\cite{b10}, propio de Python y que se usa 
-ya que permite convertir objetos de este lenguaje en formato binario de manera sencilla y rápida. En busca de menores tiempo de espera, 
-se realiza el procedimiento de simulación de partidas de manera paralela, es decir, usando los distintos hilos de la CPU, se simularán tantas 
-partidas como sea posible al mismo tiempo, juntando después los resultados y datos reunidos. Esto es posible gracias al módulo \emph{multiprocessing} 
-de Python~\cite{b11}, a partir de la clase \emph{Pool}, que actúa como un administrador de distintos procesos que son lanzados, 
-encargados de simular partidas a partir de los argumentos que reciben.
+donde: 
+\begin{equation}
+UCT(v)=\frac{Q(v)}{N(v)}+C*\sqrt{\frac{ln(N(p))}{N(v)}} 
+\end{equation}
 
-Para la generación de datos, se proponen distintos tipos de simulación de partidas, de tal manera que es posible simular partidas 
-del agente jugando contra sí mismo, así como el agente enfrentándose a un oponente que escoge siempre movimientos aleatorios, 
-y enfrentamientos entre el agente usando la política por defecto propia de UCT frente al agente que use una red neuronal entrenada 
-como política. Para los 2 últimos casos, se incluye información de los resultados del agente, que son de interés conocer. Evidentemente, 
-la generación de datos inicial será del agente jugando contra sí mismo, sin red neuronal, y estableciendo el número de partidas 
-simuladas a 500, con 500 iteraciones del algoritmo, obteniendo así un conjunto de datos lo suficientemente amplio, asegurando que 
-las decisiones tomadas, si bien no siempre son las óptimas, son suficientemente buenas y, en especial, rápidas.
+$Q(v)$ representa la recompensa acumulada obtenida por el nodo (v). 
 
-Por otra parte, la red neuronal consiste en 6 capas, de tal manera que 4 de ellas son ocultas. En primer lugar, la capa de entrada es una convolucional de 2 dimensiones, 
-compuesta por 128 filtros de tamaño 3x3 que sirve para detectar patrones espaciales simples del tablero. La siguiente capa es idéntica a la anterior, 
-y tiene como objetivo aprender patrones más complejos, alcanzando un entendimiento aún mayor del juego. A continuación, hay una capa que convierte 
-la salida tridimensional de la capa anterior a un vector unidimensional, de tal manera que pueda ser interpretada por capas posteriores. 
-Dichas capas son 2 densas de 128 y 64 neuronas respectivamente, con función de activación ReLU, correspondiente a la ecuación~\eqref{eq:relu}, que devuelve 0 para 
-todos los valores negativos, y crece linealmente para los positivos. Estas capas permiten alcanzar un entendimiento profundo de distintas representaciones 
-de los estados tablero. Por último, la capa de salida también es densa, con una única neurona, y con función de activación tanh, correspondiente
-a la ecuación~\eqref{eq:tanh}, de tal manera que devuelve un valor contenido en [-1, 1], que representa la probabilidad de victoria del jugador activo en un estado determinado.
+$N(v)$ indica el número de veces que el nodo ha sido visitado. 
+
+$N(p)$ corresponde al número de visitas realizadas al nodo padre. 
+
+C es una constante que controla el equilibrio entre exploración y explotación. 
+
+En este trabajo se ha utilizado el valor $C=\frac{1}{\sqrt{2}}$, por lo que la expresión empleada durante la búsqueda queda representada por la ecuación (2): 
+\begin{equation}
+UCT(v) = \frac{Q(v)}{N(v)} + \frac{1}{\sqrt{2}}\sqrt{\frac{ln(N(p))}{N(v)}} 
+\end{equation}
+
+Gracias a este criterio, el algoritmo favorece la exploración de movimientos que han sido analizados pocas veces, sin dejar de priorizar aquellos que han obtenido buenos resultados. 
+De esta manera, UCT consigue dirigir la búsqueda hacia las regiones más prometedoras del árbol, mejorando progresivamente la calidad de las decisiones tomadas por el agente. 
+
+\subsection{Redes neuronales multicapas} 
+Las redes neuronales multicapas son modelos de aprendizaje capaces de aproximar funciones complejas a partir de ejemplos de entrenamiento. 
+Durante el proceso de aprendizaje, la red ajusta sus parámetros internos para establecer relaciones entre las entradas recibidas y los valores objetivo asociados~\cite{b4}. 
+
+En este trabajo se emplea una arquitectura convolucional de tipo feedforward, compuesta por varias capas ocultas. 
+El entrenamiento se realiza mediante aprendizaje supervisado, utilizando ejemplos para los que se conoce previamente la salida~\cite{b3}. 
+De esta forma, las predicciones generadas por la red pueden compararse con los valores reales, permitiendo ajustar progresivamente sus parámetros para mejorar su precisión. 
+
+Para ello, la red recibe como entrada una representación del estado de la partida y produce como salida una valoración numérica de la calidad de la posición correspondiente. 
+Una vez entrenada, esta valoración puede utilizarse para guiar el proceso de búsqueda y proporcionar estimaciones más informadas que las obtenidas mediante simulaciones completamente aleatorias. 
+
+\subsection{Aprendizaje mediante autojuego} 
+El autojuego es una técnica ampliamente utilizada en la inteligencia artificial para generar datos de entrenamiento sin necesidad de disponer de partidas etiquetadas manualmente. 
+Consiste en enfrentar un agente contra sí mismo y registrar la información obtenida durante las partidas. 
+
+En el contexto de este proyecto, el agente basado en UCT juega múltiples partidas contra una copia de sí mismo. 
+Durante cada partida se almacenan los estados visitados y, una vez finalizada, se asocia a cada estado el resultado obtenido por el jugador correspondiente. 
+Este procedimiento permite generar automáticamente un conjunto de datos que posteriormente se emplea para entrenar la red neuronal encargada de evaluar los estados del tablero. 
+
+\subsection{Trabajo relacionado} 
+
+Una de las principales referencias utilizadas durante el desarrollo de este trabajo ha sido el artículo "A Survey of Monte Carlo Tree Search Methods"~\cite{b5}. 
+Este trabajo proporciona una visión detallada de los algoritmos MCTS y, en particular, de la variante UCT, permitiendo comprender sus fundamentos teóricos y su aplicación en problemas de toma de decisiones. 
+Además, tanto las explicaciones como el pseudocódigo presentado en dicho artículo sirvieron como guía para la implementación del agente desarrollado. 
+
+Por otra parte, la combinación de búsqueda adversaria y aprendizaje profundo ha dado lugar a algunos de los avances más relevantes en inteligencia artificial aplicada a juegos. 
+En este ámbito destacan especialmente los trabajos de "AlphaGo"~\cite{b6} y "AlphaZero"~\cite{b7}, que demostraron el potencial de integrar redes neuronales profundas (Deep Learning) con algoritmos de búsqueda para alcanzar niveles de juego extraordinariamente altos en distintos juegos de tablero. 
+
+Finalmente, también se tomó como referencia un proyecto reciente similar a este centrado en el desarrollo de un agente para Otelo~\cite{b8}. 
+Aunque dicho trabajo emplea técnicas diferentes, basadas principalmente en el algoritmo minimax y la poda alfa-beta, constituye un ejemplo interesante de las distintas aproximaciones que pueden utilizarse para abordar este juego desde la perspectiva de la inteligencia artificial. 
+
+\section{Metodología e Implementación} 
+
+\subsection{Implementación del juego Otelo} 
+Como base para el desarrollo del agente se implementó una versión completa del juego de Otelo en Python. 
+Esta implementación se encarga de gestionar todas las reglas del juego y de proporcionar el entorno necesario para ejecutar partidas, tanto durante el proceso de búsqueda como durante la generación de datos de entrenamiento. 
+
+En una primera fase, el sistema permitía disputar partidas mediante una sencilla interfaz de línea de comandos, donde los movimientos eran introducidos manualmente por el usuario. 
+Puesto que el agente aún no había sido desarrollado, esta versión inicial sirvió para comprobar el correcto funcionamiento de las reglas del juego, la validación de movimientos y la actualización del tablero tras cada jugada. 
+Una vez verificada su correcta operación, esta implementación se utilizó como base para el desarrollo de los agentes y para la simulación automática de partidas. 
+
+El tablero se representa mediante una matriz de $8\times8$ posiciones, donde cada casilla puede encontrarse vacía o contener una ficha de alguno de los dos jugadores. 
+A partir de esta representación se implementan las operaciones necesarias para determinar los movimientos legales disponibles en cada turno, aplicar las capturas correspondientes y actualizar el estado del tablero tras cada jugada. 
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.8\columnwidth]{interfaz}
+  \caption{Fig 1. Interfaz del juego, mostrando el turno del jugador} 
+  \label{fig:interfaz}
+\end{figure}
+
+Además, el sistema contempla situaciones especiales propias del juego, como la ausencia de movimientos válidos para un jugador, obligándole a ceder el turno al oponente. 
+También se implementan los mecanismos necesarios para detectar el final de una partida y determinar el resultado obtenido por cada jugador. 
+Esta implementación constituye la base sobre la que se apoyan tanto el algoritmo de búsqueda UCT como el proceso de autojuego que se utiliza posteriormente para generar el conjunto de entrenamiento. 
+
+\subsection{Implementación del agente UCT} 
+Una vez implementado el entorno de juego, se desarrolló un agente basado en Monte Carlo Tree Search utilizando la estrategia Upper Confidence Bounds for Trees (UCT) para guiar la exploración del árbol de búsqueda. 
+
+La estructura principal del algoritmo está formada por nodos que almacenan la información necesaria para el proceso de búsqueda, incluyendo el estado del tablero asociado, el jugador al que corresponde el turno, el número de visitas recibidas y la recompensa acumulada obtenida durante las evaluaciones realizadas. 
+Asimismo, cada nodo mantiene referencias a su nodo padre y a sus posibles hijos, permitiendo construir y recorrer el árbol de forma eficiente. 
+
+Durante cada iteración del algoritmo se ejecutan las cuatro fases características de MCTS. 
+En primer lugar, se realiza la fase de selección, recorriendo el árbol mediante el criterio UCT hasta alcanzar un nodo susceptible de expansión. 
+A continuación, se genera uno de los movimientos aún no explorados y se crea el nodo hijo correspondiente. 
+Posteriormente, se evalúa el estado alcanzado para estimar su calidad y, finalmente, el valor obtenido se propaga hacia la raíz actualizando las estadísticas de todos los nodos visitados durante la iteración. 
+
+Como hemos mencionado anteriormente, con el fin de adaptarse correctamente a las reglas de Otelo, la implementación contempla también situaciones en las que un jugador no dispone de movimientos legales. 
+En estos casos se genera un estado de paso de turno que permite continuar la exploración sin interrumpir la búsqueda. 
+
+En cuanto se alcanza el número de iteraciones establecido, el agente selecciona como movimiento final aquel asociado al hijo de la raíz que ha recibido un mayor número de visitas, siguiendo el criterio habitual empleado en UCT. 
+Hay que tener en cuenta que un mayor número de iteraciones aumenta la posibilidad de tomar una decisión óptima, pero por otro lado también aumenta en gran medida el coste computacional y en consecuencia los tiempos de espera. 
+
+\subsection{Generación automática de partidas mediante autojuego} 
+Con el agente basado en UCT generamos de forma automática el conjunto de datos necesario para entrenar la red neuronal. 
+Para ello, se recurrió a una estrategia de autojuego, en la que el agente disputa partidas contra una copia de sí mismo utilizando la misma política de búsqueda para ambos jugadores. 
+
+Durante cada partida se registran los estados del tablero visitados tras cada movimiento, junto con el jugador al que corresponde el turno en dicho estado. 
+Una vez finalizada la partida, se determina el resultado obtenido y se asigna una etiqueta a cada estado almacenado en función del resultado final del jugador asociado a dicho estado. 
+
+Las etiquetas utilizadas son: 
+\begin{itemize}
+\item +1 si el jugador acaba ganando la partida. 
+\item 0 en caso de empate. 
+\item -1 si el jugador resulta derrotado. 
+\end{itemize}
+
+De esta forma, cada ejemplo del conjunto de entrenamiento queda formado por una representación del estado del tablero y una valoración asociada al resultado final de la partida. 
+Este conjunto de datos se almacena en un DataFrame de Pandas~\cite{b9}, lo que facilita su manipulación y posterior procesamiento. 
+Una vez construido el conjunto de datos, este se guarda en un archivo Pickle (.pkl)~\cite{b10}, un formato de serialización propio de Python que permite almacenar y recuperar estructuras de datos complejas de forma sencilla y rápida. 
+
+Puesto que la generación de partidas constituye una de las etapas más costosas del proceso, se ha implementado un mecanismo de ejecución paralela que permite generar múltiples partidas simultáneamente, reduciendo significativamente el tiempo necesario para construir conjuntos de entrenamiento de gran tamaño. 
+Esto es posible gracias al módulo multiprocessing de Python~\cite{b11}. 
+En particular, se utiliza la clase Pool, que distribuye la simulación de partidas entre varios procesos independientes, aprovechando los distintos núcleos disponibles y acelerando considerablemente la generación de datos. 
+
+\subsection{Construcción del conjunto de entrenamiento} 
+Los estados obtenidos durante las partidas generadas mediante el autojuego deben transformarse a un formato adecuado para ser procesados por la red neuronal. 
+Para ello, cada posición del juego se convierte en una representación matricial que conserva toda la información relevante del tablero. 
+
+La entrada utilizada por la red está formada por un tensor de dimensiones $8\times8\times4$, donde cada uno de los cuatro canales codifica una característica diferente del estado del juego. 
+El primer canal representa las fichas del jugador para el que se realiza la evaluación, mientras que el segundo contiene las fichas de su oponente. 
+El tercer canal identifica las casillas vacías del tablero y el cuarto indica qué jugador tiene el turno en el estado considerado. 
+
+Esta representación permite que la red neuronal disponga de toda la información necesaria para evaluar una posición sin necesidad de utilizar características calculadas manualmente. 
+Además, al mantener la estructura espacial del tablero, resulta especialmente adecuada para ser procesada mediante capas convolucionales. 
+
+Una vez transformados todos los estados almacenados, se construye el conjunto de entrenamiento final, formado por pares de entrada-salida. 
+Cada entrada corresponde a una representación del tablero, mientras que la salida asociada es la etiqueta asignada durante el proceso de autojuego, indicando si dicho estado condujo finalmente a una victoria, un empate o una derrota para el jugador correspondiente. 
+
+\subsection{Arquitectura y entrenamiento de la red neuronal} 
+Una vez generado el conjunto de entrenamiento, se procedió al diseño y entrenamiento de la red neuronal con el objetivo de lograr la capacidad para estimar la calidad de un estado de juego a partir de la configuración actual del tablero. 
+
+Se optó por una arquitectura convolucional debido a que el tablero de Otelo presenta una estructura espacial bien definida. 
+Las capas convolucionales permiten detectar patrones locales entre fichas cercanas, capturando información estratégica relevante que resulta más difícil de modelar mediante redes completamente conectadas. 
+
+La red neuronal está compuesta por un total de 6 capas, de las cuales cuatro realizan el procesamiento principal de la información. 
+La capa de entrada corresponde a una capa convolucional bidimensional con 128 filtros de tamaño $3\times3$, encargada de extraer patrones básicos presentes en la configuración del tablero. 
+A continuación, se emplea una segunda capa convolucional con la misma estructura, que permite combinar la información obtenida previamente y detectar relaciones más complejas entre las fichas. 
+
+Tras las capas convolucionales, se incorpora una capa de aplanado (Flatten), cuya función es transformar la salida tridimensional generada por las convoluciones en un vector unidimensional que pueda ser procesado por las capas posteriores. 
+
+La información resultante se introduce en dos capas densas de 128 y 64 neuronas, respectivamente, ambas utilizando la función de activación ReLU, correspondiente a la ecuación (3). 
+Estas capas permiten combinar las características extraídas previamente y construir una representación más abstracta del estado del tablero. 
+
+Finalmente, la red dispone de una capa de salida formada por una única neurona con función de activación tanh, correspondiente a la ecuación (4). 
+Gracias a esta función, la salida queda acotada al intervalo [-1,1], donde los valores próximos a 1 indican posiciones favorables para el jugador activo, mientras que los valores cercanos a 1 representan posiciones desfavorables. 
+De este modo, la red proporciona una estimación de la calidad del estado evaluado, que posteriormente puede emplearse para guiar el proceso de búsqueda del agente. 
 
 \begin{equation}
   \label{eq:relu}
-  ReLU(z) = max(0, z)
+  ReLU(z)=max(0,z) 
 \end{equation}
 
 \begin{equation}
   \label{eq:tanh}
-  tanh(x) = \frac{e^x - e^{-x}}{e^x + e^{-x}}
+  tanh(x)=\frac{e^{x}-e^{-x}}{e^{x}+e^{-x}} 
 \end{equation}
 
-Para la creación y entrenamiento de la red se usa principalmente la biblioteca \emph{Keras}~\cite{b12}. En concreto, el procedimiento es el siguiente:  
-Se convierten los datos a un tensor 3D, un tablero de 8x8 con 4 canales representando las distintas características de los estados. 
-La red recibe esta entrada, así como el atributo que debe predecir, correspondiente en nuestro caso a la probabilidad de victoria del jugador 
-que se ha pasado como parámetro para su entrenamiento. De esta manera, se puede proceder al entrenamiento, que se realiza con el 
-optimizador \emph{Adam}~\cite{b13}, que define algunos valores importantes por defecto, como el factor de aprendizaje, aunque pueden ser modificados 
-en cualquier momento. Además, se usa como función de pérdida el error cuadrático medio (MSE), correspondiente a la ecuación~\eqref{eq:mse}, y el error 
-absoluto medio (MAE), equivalente a la ecuación~\eqref{eq:mae}, como métrica de monitorización del desempeño del modelo. 
+Para el desarrollo y entrenamiento del modelo se empleó la biblioteca Keras~\cite{b12}, que proporciona las herramientas necesarias para definir la arquitectura de la red, entrenarla y evaluar su rendimiento. 
+Como paso previo al entrenamiento, los estados del juego se transforman a una representación adecuada para la red neuronal mediante tensores de dimensiones $8\times8\times4$ donde cada canal almacena información relevante sobre la configuración del tablero. 
+
+Una vez realizada esta transformación, la red recibe como entrada los estados generados durante el proceso de autojuego junto con la etiqueta asociada a cada uno de ellos. 
+El objetivo del entrenamiento es que el modelo aprenda a estimar la calidad de una posición a partir de ejemplos obtenidos de partidas completas. 
+
+Para ajustar los parámetros de la red se utilizó el optimizador Adam~\cite{b13}, una de las técnicas más utilizadas en aprendizaje profundo debido a su capacidad para adaptar automáticamente la tasa de aprendizaje durante el proceso de entrenamiento. 
+Asimismo, se empleó el error cuadrático medio (MSE), correspondiente a la ecuación (5), como función de pérdida, mientras que el error absoluto medio (MAE), correspondiente a la ecuación (6), se utilizó como métrica para monitorizar el rendimiento del modelo a lo largo del entrenamiento. 
 
 \begin{equation}
   \label{eq:mse}
-  MSE = \frac{1}{|D|} \sum_{(x,y) \in D} (y - \hat{y})^2
+  MSE=\frac{1}{|D|}\sum_{(x,y)\in D}(y-\hat{y})^{2} 
 \end{equation}
 
 \begin{equation}
   \label{eq:mae}
-  MAE = \frac{1}{|D|} \sum_{(x,y) \in D} |y - \hat{y}|
+  MAE=\frac{1}{|D|}\sum_{(x,y)\in D}|y-\hat{y}| 
 \end{equation}
 
-Además del entrenamiento, es necesario evaluar la precisión de las predicciones de la red neuronal, de tal manera que es necesario dividir 
-los datos de prueba en 2 conjuntos, uno para cada propósito. Dicha división se realiza utilizando la herramienta \emph{Scikit Learn}~\cite{b14}. 
-Finalmente, queda una división 80-20, siendo el conjunto de entrenamiento mayor por necesidad. Así mismo, el entrenamiento se realiza en 50 épocas, 
-y se procesarán tanto los datos de prueba como los de entrenamiento en mini lotes de tamaño 128. En los casos en los que el conjunto de datos sea 
-demasiado grande, se aumentará la configuración a 100 épocas y tamaño de 256 para los mini lotes. Toda la configuración mencionada proporciona un 
-equilibrio entre coste computacional y eficacia de la red neuronal.
+Además del proceso de entrenamiento, resulta necesario evaluar la capacidad de generalización del modelo sobre datos no utilizados durante el ajuste de sus parámetros. 
+Para ello, el conjunto de ejemplos disponible se divide en dos subconjuntos independientes: uno destinado al entrenamiento de la red neuronal y otro reservado para su evaluación posterior. 
+Esta partición se realiza mediante la biblioteca Scikit-Learn~\cite{b14}, obteniendo una distribución del 80\% de los datos para entrenamiento y del 20\% para validación y prueba. 
 
-Una vez entrenada la red neuronal, se puede sustituir la función de política por defecto tradicional de UCT, de tal manera que ahora las 
-recompensas de los nodos estarán determinadas por la predicción de victoria en un estado determinado para el jugador que debe tomar la decisión, 
-es decir, para el jugador del nodo raíz. Evidentemente, cuánto más precisa sea la red al determinar la posibilidad de victoria, 
-mejores decisiones tomará el algoritmo, de tal manera que, si la red no está lo suficientemente entrenada, no mejorará en gran medida a la política 
-tradicional. Esto mismo se analizará con más detalle en el siguiente apartado.
+El entrenamiento se lleva a cabo durante 100 épocas, procesando los ejemplos en mini lotes de tamaño 256. Esta configuración proporciona un equilibrio razonable entre el tiempo de entrenamiento y la calidad de las predicciones obtenidas por la red. 
 
-Para que el agente pueda usar correctamente el modelo, se ha utilizado la herramienta \emph{TensorFlow}~\cite{b15}, muy ligada a \emph{Keras}. 
-En concreto, lo que se hace es convertir la información necesaria a un tensor que se le pasa como entrada a la red neuronal 
-para que pueda predecir la posibilidad de victoria del jugador desde ese estado de la partida. Es importante que siempre se 
-le pase el jugador que debe tomar la decisión de mover, es decir, al que le correspondería realizar un movimiento en la partida real, 
-que equivale al jugador asociado al nodo raíz del árbol. De lo contrario, la red no sería capaz de predecir desde la perspectiva 
-correcta, llevando a jugadas ineficientes.
+Una vez completado el proceso de entrenamiento, el modelo puede utilizarse para estimar la calidad de los estados explorados durante la búsqueda. 
+En lugar de depender exclusivamente de simulaciones para obtener una valoración de una posición, el agente puede apoyarse en las predicciones generadas por la red neuronal, incorporando así el conocimiento aprendido a partir de las partidas utilizadas durante el entrenamiento. 
 
-Tras implementar el agente con la red neuronal como política de selección, es de gran importancia realizar un reentrenamiento, es decir, simular aún más partidas 
-para formar nuevos conjuntos de datos que sirvan para volver a entrenar la red neuronal, mejorando así su eficiencia. Para ello, se propone un entrenamiento escalonado, 
-de tal manera que no se empiece a simular partidas del agente jugando contra sí mismo directamente, sino que antes pase por un procedimiento de entrenamiento a partir 
-de partidas simuladas contra un oponente totalmente aleatorio y contra el propio agente, pero usando la política de selección anterior. Al realizar esto, la red neuronal 
-va aprendiendo progresivamente al ser expuesta en primera instancia a estados del tablero a los que es menos común llegar, y que son posibles gracias a la falta de 
-estrategia del oponente aleatorio. Sin embargo, es importante que los datos que se obtengan a partir de estas simulaciones no sean los únicos que se utilicen para entrenar 
-la red, ya que esto provocaría que el agente solo sea capaz de jugar de manera correcta frente a oponentes de poco nivel. Por tanto, lo ideal es que se añadan estos datos 
-a un conjunto ya existente. Por otra parte, también aprende al enfrentarse a un agente sin red neuronal, que puede llegar a realizar jugadas más eficientes mientras la red 
-no es lo suficientemente buena. El conjunto de datos se extiende progresivamente a medida que se completa cada proceso de generación de datos, que será sobrescrito 
-ocasionalmente para olvidar estados antiguos producidos por jugadas ineficientes que ya no serán de tanta utilidad.
+La utilidad de esta estrategia depende directamente de la precisión alcanzada por el modelo. 
+Cuanto más fiables sean las evaluaciones producidas por la red, mayor será su capacidad para contribuir a la toma de decisiones del agente. 
+El proceso de integración de la red neuronal dentro del algoritmo UCT y las técnicas empleadas para continuar mejorando el modelo se describen en el apartado siguiente. 
 
-Por último, una vez se haya pasado por el proceso anterior, se llega a la última parte del reentrenamiento, consistente en enfrentar al agente, 
-con la red neuronal ya entrenada suficientemente, contra sí mismo. Para que esto sea posible, es necesario introducir algo de ruido en la selección 
-de los mejores hijos de los nodos, ya que, en caso contrario, siempre se realizarían las mismas jugadas, llevando al mismo resultado en cada partida simulada. 
-Esto se debe a que, al introducir la red, se sustituye la aleatoriedad de la política por defecto de UCT por unas predicciones que siempre van a ser 
-valores muy similares para un mismo estado. Realmente, esto es algo positivo en la creación de un agente competente, pero para el entrenamiento supone una 
-clara falta de variedad en los datos. Es por ello que se introduce este ruido únicamente cuando se están generando datos de prueba. En concreto, se introducirá 
-un ruido gaussiano usando el módulo \emph{random}~\cite{b16}
+\subsection{Integración de la red neuronal y reentrenamiento} 
+Para integrar la red neuronal dentro del agente se emplea la herramienta TensorFlow~\cite{b15}, que permite cargar el modelo entrenado y realizar predicciones durante el proceso de búsqueda. 
+Cada vez que es necesario evaluar un estado del juego, la configuración del tablero se transforma al formato de entrada utilizado por la red neuronal y se proporciona como entrada al modelo para obtener una estimación de la calidad de la posición analizada. 
+La valoración producida por la red se utiliza para estimar la calidad de los nodos hoja explorados durante la búsqueda. 
 
-Tras pasar por todo este procedimiento, el agente está listo para jugar contra humanos, de manera que se ofrecerá la oportunidad de 
-jugar contra las dos versiones del agente, es decir, con ambas políticas. También se permitirá ajustar la habilidad del agente, es decir, 
-establecer el presupuesto computacional del que dispondrá.
+Es fundamental que esta evaluación se realice desde la perspectiva del jugador que debe mover en el estado considerado. 
+De esta manera, las predicciones generadas por la red mantienen una interpretación coherente a lo largo de todo el proceso de búsqueda y pueden utilizarse correctamente para estimar la calidad de los estados explorados. 
 
-\section{Resultados}
+Una vez integrada la red neuronal en el agente, resulta conveniente continuar generando nuevas partidas mediante autojuego con el objetivo de ampliar el conjunto de entrenamiento y mejorar progresivamente el rendimiento del modelo. 
+Para ello se sigue un proceso de entrenamiento iterativo, en el que la red se reentrena periódicamente utilizando los nuevos estados obtenidos durante las partidas generadas. 
 
-A continuación, se detallarán los distintos experimentos realizados, que generalmente tendrán como objetivo determinar 
-la eficacia y habilidad del agente con ambas políticas, comparando además el rendimiento de ambas y comprobar si introducir la red neuronal tiene un efecto positivo o negativo.
+Con el fin de aumentar la diversidad de posiciones presentes en el conjunto de datos, las nuevas partidas no se generan únicamente enfrentando al agente contra sí mismo. 
+También se incluyen enfrentamientos contra agentes con comportamientos más simples, capaces de producir configuraciones del tablero menos frecuentes y que dificilmente aparecerían en partidas entre agentes más avanzados. 
+Esta estrategia permite exponer a la red neuronal a una mayor variedad de situaciones de juego y favorece su capacidad de generalización. 
 
-\subsection{Agente con política aleatoria frente a oponente aleatorio}
+A medida que se generan nuevas partidas, el conjunto de entrenamiento puede ampliarse incorporando los nuevos ejemplos obtenidos o reemplazarse completamente por un conjunto más reciente, dependiendo de la configuración utilizada durante la generación de datos. 
 
-En este experimento se busca analizar la eficacia del agente antes de establecer la red neuronal como política por defecto, 
-enfrentándolo con un oponente que realiza acciones puramente aleatorias, es decir, que no sigue ningún tipo de estrategia. 
-Para ello, se reutiliza la función que permite simular partidas del agente frente a dicho oponente, indicando a través de parámetros 
-que se debe utilizar la política mencionada. Por cada partida simulada se muestra por pantalla el resultado de la partida, y una vez 
-finalicen todas las partidas, se cuentan automáticamente todas las partidas ganadas y se calcula el porcentaje de victorias, 
-que será la métrica que usaremos para el análisis. 
+La última fase del proceso consiste en generar partidas mediante autojuego entre agentes que ya incorporan la red neuronal entrenada. 
+En este escenario surge un inconveniente habitual: al utilizar siempre las mismas valoraciones para estados idénticos o muy similares, el agente tiende a repetir las mismas secuencias de movimientos, reduciendo considerablemente la diversidad de ejemplos generados. 
 
-En concreto, se realizarán dos pruebas para la comparación, estableciendo los siguientes parámetros para cada una de ellas:
+Aunque este comportamiento es deseable desde el punto de vista del rendimiento del agente, ya que refleja una toma de decisiones más consistente, puede resultar perjudicial durante la generación de datos de entrenamiento. 
+Si todas las partidas siguen patrones muy similares, la variedad de estados disponibles disminuye y la capacidad de aprendizaje de la red puede verse limitada. 
 
-1)	Iteraciones del algoritmo: 500. Partidas jugadas: 500.
+Para evitar este problema, durante la generación de nuevas partidas se introduce una pequeña perturbación aleatoria en el proceso de selección de movimientos del algoritmo UCT. 
+Concretamente, se añade ruido gaussiano mediante las funciones proporcionadas por el módulo random~\cite{b16} a las valoraciones utilizadas durante la selección de nodos. 
+Esto favorece que movimientos con evaluaciones similares puedan ser escogidos en distintas ejecuciones, incrementando la exploración de nuevas posiciones sin alterar significativamente el comportamiento general del agente. 
 
-2)	Iteraciones del algoritmo: 1000. Partidas jugadas: 500.
+Una vez completado el proceso de entrenamiento y reentrenamiento, el sistema dispone de dos versiones funcionales del agente: una basada exclusivamente en UCT y otra que incorpora la red neuronal como mecanismo de evaluación. 
+Además, se permite ajustar el presupuesto computacional disponible durante la búsqueda, lo que posibilita modificar el nivel de juego del agente en función del número de iteraciones que puede realizar para tomar una decisión. 
 
-Tras realizar las pruebas se obtienen los siguientes resultados: Para la primera prueba, se ganan 304 partidas, con un porcentaje de victorias del 60.8\%. 
-Por otro lado, para la segunda prueba se obtienen 375 victorias, llevando a un porcentaje de victorias del 75\%.
+\section{Resultados} 
 
-A partir de estos resultados podemos obtener varias conclusiones. En primer lugar, resulta evidente que el agente sigue una estrategia que le permite ganar la mayoría 
-de las veces contra un oponente de bajo nivel. Sin embargo, para que sea verdaderamente efectivo, necesita un presupuesto computacional suficientemente alto 
-que le permita encontrar las mejores jugadas posibles, algo que se ve claro en la diferencia en el porcentaje de victorias al duplicar el número de iteraciones 
-que se realiza en la búsqueda por árbol. 
+En esta sección se presentan los distintos experimentos realizados para analizar el comportamiento del agente desarrollado. 
+El objetivo principal es evaluar el rendimiento de las dos versiones implementadas: el agente basado exclusivamente en UCT y la variante que incorpora una red neuronal para la evaluación de los estados del juego. 
+Asimismo, se estudia la calidad de las predicciones realizadas por la red y su impacto sobre la toma de decisiones del agente. 
 
-Con estos resultados, podemos asumir con seguridad que el agente tiene potencial para ser habilidoso, siempre y cuando disponga de suficientes recursos. 
-No obstante, estas simulaciones son frente a un oponente muy débil, que no sigue ningún tipo de estrategia. Al enfrentarse a un oponente humano, 
-el porcentaje de victorias será menor, aunque dependiendo del nivel del jugador, el agente puede seguir obteniendo un número aceptable de victorias. 
-En general, podemos estimar que, dada la implementación actual, el agente tiene el nivel de un jugador promedio de Otelo. Si bien podría ser mucho más habilidoso 
-con un gran número de iteraciones sobre el algoritmo de búsqueda, esto no sería aceptable para enfrentarse a humanos dados los altos tiempos de espera que supondría.
+\subsection{Agente UCT frente a oponente aleatorio} 
+El primer experimento tiene como finalidad evaluar el rendimiento del agente basado únicamente en UCT frente a un oponente que selecciona sus movimientos de forma completamente aleatoria. Aunque este tipo de rival no representa un desafio especialmente exigente, permite comprobar si el agente es capaz de explotar estrategias básicas y aprovechar las debilidades de un jugador sin criterio de decisión. 
 
-El resultado no es excelente, pero lo suficientemente bueno como para que solo sean necesarias pequeñas modificaciones y optimizaciones 
-para obtener un agente mucho más habilidoso, demostrando así que la aplicación del algoritmo UCT tiene mucho potencial para este juego.
+Para realizar la evaluación se simularon múltiples partidas y se registró el número total de victorias obtenidas por el agente. 
+Como métrica principal se utilizó el porcentaje de victorias alcanzado sobre el total de partidas disputadas. 
 
-\subsection{Calidad de la red neuronal}
+En concreto, se realizarán dos pruebas para la comparación, estableciendo los siguientes parámetros para cada una de ellas: 
 
-Para este experimento, se realizarán distintas pruebas que determinarán la calidad de diversos aspectos de la red neuronal. 
-Dichas pruebas están configuradas para realizarse tras cada entrenamiento realizado, aunque únicamente se mostrarán los del último, 
-ya que a partir de ellos se podrá analizar la última versión de la red neuronal.
+1) Iteraciones del algoritmo: 500. Partidas jugadas: 500. 
 
-Es importante recordar los parámetros de entrenamiento que ya se habían mencionado anteriormente, es decir, un 20\% 
-del contenido del conjunto de datos de entrenamiento para la evaluación, que se realiza en mini lotes de tamaño 128.
+2) Iteraciones del algoritmo: 1000. Partidas jugadas: 500. 
 
-La evaluación se realiza a través de 3 métricas: Error cuadrático medio (MSE), error absoluto medio (MAE), y coeficiente de variación ($R^2$), correspondiente a la ecuación~\eqref{eq:r2}. 
+Tras realizar las pruebas se obtienen los siguientes resultados: Para la primera prueba, se ganan 308 partidas, con un porcentaje de victorias del 61.6\%. 
+Por otro lado, para la segunda prueba se obtienen 370 victorias, llevando a un porcentaje de victorias del 74\%. 
+
+A partir de los resultados obtenidos pueden extraerse varias conclusiones relevantes. 
+En primer lugar, el agente demuestra ser capaz de derrotar de forma consistente a un oponente que selecciona movimientos de manera aleatoria, lo que indica que la estrategia basada en UCT es capaz de identificar decisiones razonables y aprovechar las debilidades de jugadores poco sofisticados. 
+
+También se observa una mejora significativa al incrementar el número de iteraciones disponibles durante la búsqueda. 
+El aumento del porcentaje de victorias al pasar de 500 a 1000 iteraciones pone de manifiesto que el rendimiento del agente depende en gran medida del presupuesto computacional asignado. 
+Cuanto mayor es el número de iteraciones, más información puede recopilar el algoritmo sobre los posibles movimientos y, en consecuencia, mejores decisiones puede tomar. 
+
+No obstante, es importante señalar que estos resultados se han obtenido frente a un oponente extremadamente simple, por lo que no pueden extrapolarse directamente a enfrentamientos contra jugadores humanos o agentes más avanzados. 
+Es razonable esperar que el porcentaje de victorias disminuya al aumentar el nivel del adversario, aunque los resultados obtenidos sugieren que el agente dispone de una base estratégica suficientemente sólida para competir de manera aceptable en distintos escenarios. 
+
+En conjunto, los experimentos realizados confirman que la aplicación de UCT constituye una aproximación efectiva para el juego de Otelo. 
+Aunque todavía existen aspectos susceptibles de mejora y optimización, el comportamiento observado demuestra que el algoritmo proporciona una base robusta sobre la que construir agentes de mayor nivel. 
+
+\subsection{Evaluación de la red neuronal} 
+Con el objetivo de analizar la capacidad predictiva del modelo entrenado, se llevó a cabo una evaluación utilizando los datos reservados para validación. Aunque estas métricas se calculan tras cada fase de entrenamiento, en esta sección únicamente se presentan los resultados correspondientes a la versión final de la red neuronal, ya que son los que reflejan el comportamiento del modelo utilizado en los experimentos posteriores. 
+
+Como se indicó anteriormente, el conjunto de datos se dividió de forma que un 80\% de los ejemplos se destinó al entrenamiento y el 20\% restante a la evaluación. 
+Además, el proceso de aprendizaje se realizó utilizando mini lotes de tamaño 128. 
+
+La calidad de las predicciones se evaluó a través de 3 métricas: Error cuadrático medio (MSE), error absoluto medio (MAE), y coeficiente de determinación $(R^{2})$, definido por la siguiente ecuación (7). 
 
 \begin{equation}
   \label{eq:r2}
-  R^2 = 1 - \frac{\mathrm{MSE}}{\mathrm{VAR}(D)}
+  R^{2}=1-\frac{MSE}{VAR(D)} 
 \end{equation}
 
-Para las 2 primeras métricas, cuanto menor sea el valor, mejores serán las predicciones de la red. Por otro lado, 
-para la tercera métrica, el valor será mejor cuanto más cercano sea a 1, y si es cercano o incluso menor a 0, la red 
-no es nada acertada. Pondremos un mayor énfasis en esta tercera métrica, ya que es la que mide en qué medida la 
-varianza de los datos es explicada por la red neuronal. Las otras 2 son algo más sencillas de entender, simplemente 
-miden el error medio de las predicciones, solo que el MSE castiga más los errores grandes, algo raro en este contexto 
-ya que tanto las predicciones como los valores objetivos están en el rango [-1, 1].
+Las métricas MSE y MAE permiten cuantificar el error cometido por la red neuronal al realizar sus predicciones. 
+En ambos casos, valores más bajos indican un mejor ajuste a los datos. 
+Por su parte, el coeficiente $(R^{2})$ proporciona una medida de la capacidad explicativa del modelo, tomando valores más cercanos a 1 cuanto mejor representa la variabilidad presente en el conjunto de datos. 
 
-Tras realizar las pruebas, se obtienen los siguientes valores: MSE = 0.2825, MAE = 0.2020, $R^2$ = 0.7099.
+Tras realizar las pruebas, se obtuvieron los siguientes resultados: $MSE=0.2838$, $MAE=0.2011$, $R^{2}=0.7086$ 
 
-De estos resultados podemos afirmar que la red neuronal es capaz de predecir acertadamente la mayoría de los valores, aunque todavía 
-se podría refinar algo más. Un coeficiente de variación de 0.7099 no es malo en absoluto, pero podría ser mejor e índica que en situaciones 
-reales pueda realizar predicciones desacertadas. Por otro lado, ambos errores son pequeños, aunque lo ideal sería que fueran aún menores, 
-especialmente porque el rango de valores ya era pequeño de por sí.
+Los resultados obtenidos indican que la red neuronal es capaz de capturar una parte significativa de la información contenida en los datos de entrenamiento. 
+En particular, el valor de $(R^{2})$ muestra que el modelo consigue explicar una proporción considerable de la variabilidad presente en las posiciones evaluadas, lo que sugiere que ha aprendido patrones relevantes del juego. 
 
-En resumen, si bien la red neuronal podría refinarse aún más, parece ser lo suficientemente buena. Por otra parte, esto no 
-indica que vaya a mejorar la política anterior, ya que cabe la posibilidad de que aún no haya comprendido del todo bien los 
-distintos patrones y estados del tablero. Esto se evaluará en el siguiente experimento.
+No obstante, todavía existe margen de mejora. Aunque los errores medios obtenidos son relativamente reducidos, siguen produciéndose predicciones alejadas de los valores esperados en determinadas situaciones. 
+Esto puede repercutir posteriormente en la calidad de las evaluaciones utilizadas durante la búsqueda del agente. 
 
-\subsection{Agente con red neuronal frente a agente sin red neuronal}
+En conjunto, los resultados permiten considerar que la red neuronal alcanza un nivel de precisión razonable para su integración en el algoritmo. 
+Sin embargo, la verdadera utilidad del modelo no depende únicamente de sus métricas de regresión, sino también del impacto que tenga sobre el rendimiento global del agente. 
+Por este motivo, en el siguiente experimento se analiza si la incorporación de la red neuronal contribuye realmente a mejorar la toma de decisiones durante las partidas. 
 
-Ahora se busca analizar el impacto de usar una red neuronal para predecir las recompensas en la política por defecto del algoritmo. 
-Para ello, reutilizamos la función que permite simular partidas entre los agentes de esta manera. En esta ocasión, se medirá el porcentaje de victorias 
-del agente que implementa red neuronal, siguiendo exactamente el mismo procedimiento que en el primer experimento. Se realizarán tres pruebas distintas:
+\subsection{Agente con red neuronal frente a agente sin red neuronal} 
+El último experimento tiene como objetivo estudiar el efecto de incorporar una red neuronal al proceso de evaluación utilizado por el algoritmo UCT. 
+Para ello, se enfrentan directamente las dos versiones desarrolladas del agente: la versión basada exclusivamente en UCT y la variante que utiliza la red neuronal para valorar los estados explorados durante la búsqueda. 
 
-1)	Iteraciones del algoritmo: 500 para ambos agentes. Partidas jugadas: 500.
+La evaluación se realiza mediante la simulación de múltiples partidas entre ambos agentes, utilizando como métrica principal el porcentaje de victorias obtenido por la versión que incorpora la red neuronal. 
+Con el fin de analizar también la influencia del presupuesto computacional disponible, se consideran tres configuraciones distintas: 
 
-2)	Iteraciones del algoritmo: 1000 para ambos agentes. Partidas jugadas: 500.
+1) Iteraciones del algoritmo: 500 para ambos agentes. Partidas jugadas: 500. 
 
-3)	Iteraciones del algoritmo: 2000 para ambos agentes. Partidas jugadas: 100
+2) Iteraciones del algoritmo: 1000 para ambos agentes. Partidas jugadas: 500. 
 
-Salta a la vista que la configuración es muy similar a la primera. Sin embargo, lo que se busca medir esta vez es distinto, ya que es interesante 
-analizar la importancia del presupuesto computacional que se le ofrece a los agentes y determinar cuál de los dos se ve más beneficiado por un mayor valor. 
-Por esa razón, se incluye una tercera prueba, de dimensiones menores en cuanto a partidas jugadas, pero con un alto número de iteraciones.
+3) Iteraciones del algoritmo: 2000 para ambos agentes. Partidas jugadas: 100 
 
-Una vez realizadas las pruebas, se obtienen los siguientes resultados: Para la primera prueba, el agente con red neuronal gana un total de 128 partidas, 
-es decir, un 37.8\% de victorias. Por otro lado, en la segunda prueba mejora, consiguiendo ganar 238 partidas, y obteniendo así un 47.6\% de victorias.
-Para la última prueba, gana 51 partidas y, en consecuencia, obtiene un 51\% de victorias.
+Aunque la metodología es similar a la empleada en experimentos anteriores, en este caso el interés se centra en determinar si la información proporcionada por la red neuronal permite mejorar la calidad de las decisiones tomadas durante la búsqueda y cómo afecta el número de iteraciones al rendimiento de cada agente. 
 
-Los resultados implican que el agente que implementa la red neuronal es, en general, menos habilidoso, a partir de lo cual se puede concluir que 
-la red no ha tenido un efecto positivo en cuanto a efectividad y toma de decisiones. Esto se puede deber a muchos motivos, pero el principal es 
-la falta de entrenamiento de la red. Si bien era capaz de predecir correctamente los valores esperados en la evaluación en el experimento anterior, 
-todo parece indicar que todavía no tiene un entendimiento profundo del juego, y que necesita ser entrenada con datos de prueba más abundantes y de 
-mayor calidad para así poder realizar predicciones aún más precisas, asegurando una toma de decisiones más acertada. 
+Una vez realizadas las pruebas, se obtienen los siguientes resultados: 
 
-También es interesante analizar la diferencia en el porcentaje de victorias al aumentar el número de iteraciones del algoritmo. Dados los resultados, 
-parece que el agente con red mejora en mayor medida que el anterior cuanto mayor presupuesto computacional se le ofrece. Esto se demuestra en la tercera 
-prueba, en la que consigue superar por un pequeño margen al otro agente, aunque al haberse simulado menos partidas, los resultados no son tan significativos. 
-Aun así, podemos concluir que con suficientes iteraciones puede igualar e incluso superar al agente anterior, aunque a efectos prácticos no sería viable 
-debido al tiempo que le llevaría tomar una decisión.
+Para la primera prueba, el agente con red neuronal gana un total de 129 partidas, es decir, un 25.8\% de victorias. 
 
-A pesar de los resultados, cabe destacar que el uso de la red hace que el agente sea algo más eficiente en términos de tiempo, 
-incluso si es afectado por un mínimo retraso inicial causado por la carga del modelo predictivo. Por tanto, si se consigue una red neuronal lo suficientemente buena, 
-el agente no solo mejoraría en términos de habilidad sino también en tiempos. Por esta razón, a pesar de estos malos resultados, podemos afirmar que este enfoque 
-tiene un gran potencial para construir un agente aún mejor, y para ello solo necesita más rondas de reentrenamiento, esta vez con partidas de mayor calidad.
+Por otro lado, en la segunda prueba mejora, consiguiendo ganar 240 partidas, y obteniendo así un 48\% de victorias. 
 
-Por último, todo esto no quiere decir que el agente que implementa una red neuronal es totalmente incompetente, ya que sigue siendo capaz de hacer jugadas decentes, 
-especialmente cuando se establece un número alto de iteraciones para el algoritmo de búsqueda. Simplemente es peor que cuando se usaba la política por defecto propia de UCT. 
-En general, podemos asumir con seguridad que, al menos, es mejor que un agente sin ningún tipo de estrategia, o con una estrategia extremadamente simple.
+Para la última prueba, gana 54 partidas y, en consecuencia, obtiene un 54\% de victorias. 
 
-\section{Conclusiones}
+A partir de estos resultados puede observarse que la incorporación de la red neuronal no produce inicialmente una mejora clara respecto al agente UCT clásico. 
+En las dos primeras configuraciones, la versión basada exclusivamente en UCT obtiene mejores resultados, lo que sugiere que las valoraciones proporcionadas por la red todavía no son lo suficientemente precisas como para superar de forma consistente al mecanismo de evaluación tradicional. 
 
-En este trabajo se ha diseñado y desarrollado un agente capaz de jugar al Otelo utilizando dos políticas distintas para el algoritmo UCT. 
-Una de ellas es la del propio algoritmo y otra se basa en las predicciones de una red neuronal entrenada para tales efectos. Además, 
-se realizaron distintos experimentos para evaluar la eficacia de ambas, en los que se obtuvieron buenos resultados para la política 
-tradicional de UCT. Por otro lado, la red neuronal obtuvo resultados decentes, aunque no puede decir lo mismo para la política que la toma como base.
+Una posible explicación es que, aunque la red neuronal alcanza métricas razonables durante la fase de entrenamiento, aún no ha sido capaz de capturar completamente todos los patrones estratégicos presentes en el juego. 
+Como consecuencia, algunas de las evaluaciones utilizadas durante la búsqueda pueden inducir decisiones menos acertadas que las obtenidas mediante el enfoque original. 
 
-En general, los resultados muestran que el agente con la política por defecto de UCT es bastante competente, llegando al nivel de jugadores promedios de Otelo, 
-ya que es capaz de seguir una estrategia determinada y derrotar en la mayoría de ocasiones a un oponente débil. Por otra parte, la red neuronal demostró ser 
-capaz de predecir resultados de las partidas con un nivel razonable de precisión, obteniendo errores bajos y demostrando tener un coeficiente de variación más que aceptable. 
-Sin embargo, al integrar la red neuronal como nueva política por defecto, los resultados fueron algo decepcionantes, ya que no mostró una mejoría respecto a la política anterior.
+No obstante, también se aprecia una tendencia interesante al aumentar el número de iteraciones disponibles. 
+A medida que el presupuesto computacional crece, la diferencia entre ambos agentes se reduce progresivamente hasta alcanzar resultados muy similares en la tercera prueba. 
+Esto sugiere que la información proporcionada por la red neuronal puede resultar más útil cuando el algoritmo dispone de suficientes iteraciones para combinar adecuadamente las predicciones del modelo con la exploración realizada por UCT. 
 
-En conclusión, tras comparar los resultados de ambas políticas, podemos determinar que la red neuronal todavía no es capaz de entender por completo el juego, 
-de manera que sus predicciones no ayudan en gran medida a mejorar a la política anterior en cuanto a calidad de las decisiones. No obstante, se pueden sacar 
-muchas conclusiones positivas de los resultados obtenidos. Por un lado, el agente basado totalmente en el algoritmo UCT es sólido y tiene potencial para mejorar. 
-Además, con un entrenamiento más extenso y de mejor calidad para la red neuronal, es plausible que se logren no solo decisiones más acertadas, sino también una 
-reducción en el tiempo de respuesta del agente sin sacrificar su habilidad, lo que evidencia un gran potencial para este enfoque, tal como se buscaba en este trabajo. 
-Si bien el agente con red neuronal solo es suficientemente bueno cuando dispone de muchos recursos computacionales, en un futuro podría llegar a ser más hábil con pocos de esos recursos.
+Asimismo, la utilización de la red neuronal permite obtener evaluaciones de estados de manera más rápida que mediante simulaciones completas, por lo que una mejora en la calidad del modelo podría traducirse no solo en una mayor capacidad de juego, sino también en una reducción del coste computacional asociado a la búsqueda. 
 
-Para finalizar, se identifican diversas líneas de mejora y trabajo futuro. La más evidente es optimizar el entrenamiento y la arquitectura de la red neuronal, 
-por ejemplo, incorporando capas convolucionales o densas adicionales, así como capas de normalización para mejorar la generalización. Así mismo, se propone explorar 
-estrategias híbridas que combinen la simulación de UCT junto con predicciones precisas de una red neuronal, guiando así el proceso de selección, e incluso se podría 
-mantener algo de la aleatoriedad propia de UCT. También es muy interesante la opción de mantener el árbol de búsqueda en caché, para así poder reutilizarlo en caso 
-de que el adversario haga algún movimiento que lleve a alguno de los nodos explorados. De esta manera, se podría reducir el tiempo de respuesta y mejorar la calidad 
-de las decisiones del agente, sin importar la política por defecto utilizada.
+En conjunto, los resultados muestran que la integración de la red neuronal todavía no supera de forma consistente al agente UCT clásico, pero sí evidencian el potencial de este enfoque. 
+Un conjunto de entrenamiento más amplio, nuevas rondas de reentrenamiento o ajustes adicionales de la arquitectura podrían permitir que futuras versiones del modelo proporcionen evaluaciones más precisas y contribuyan de forma más efectiva al proceso de toma de decisiones. 
 
-\section{Declaración de Uso de IA Generativa}
+Por último, conviene destacar que, a pesar de no alcanzar el rendimiento de la versión clásica de UCT, el agente basado en red neuronal sigue mostrando un comportamiento competitivo y claramente superior al de un jugador aleatorio o de estrategias muy simples, especialmente cuando dispone de un presupuesto computacional elevado. 
 
-A lo largo de este proyecto, se ha hecho uso de inteligencia artificial generativa como apoyo para plantear ciertas partes de la implementación o resolver problemas surgidos 
-durante la documentación. En concreto, se ha usado \emph{ChatGPT}, de \emph{OpenAI}. A continuación, se describen los aspectos en los que se ha usado, así como las entradas proporcionadas a los mismos.
+\section{Conclusiones} 
+
+En este trabajo se ha desarrollado un agente capaz de jugar al Otelo mediante el algoritmo UCT y se ha estudiado la incorporación de una red neuronal como mecanismo de evaluación de los estados explorados durante la búsqueda. 
+Para ello, se implementaron dos versiones del agente: una basada exclusivamente en UCT y otra que integra un modelo de aprendizaje profundo entrenado a partir de partidas generadas mediante autojuego. 
+
+Los experimentos realizados muestran que la versión clásica de UCT ofrece un rendimiento sólido, siendo capaz de derrotar con frecuencia a oponentes de baja dificultad y mejorando su comportamiento a medida que aumenta el presupuesto computacional disponible. 
+Estos resultados ponen de manifiesto la eficacia de UCT como estrategia de búsqueda para un juego con la complejidad de Otelo. 
+
+Por otro lado, la red neuronal entrenada obtuvo resultados razonables durante la fase de evaluación, alcanzando valores satisfactorios en las métricas utilizadas para medir su capacidad predictiva. 
+Esto indica que el modelo ha sido capaz de aprender patrones relevantes presentes en los estados del tablero y proporcionar estimaciones coherentes sobre la calidad de una posición. 
+
+Sin embargo, la integración de la red neuronal dentro del proceso de búsqueda no produjo una mejora inmediata respecto al agente basado únicamente en UCT. 
+Aunque el modelo fue capaz de realizar evaluaciones útiles en muchos casos, los resultados sugieren que todavía no dispone de la precisión necesaria para sustituir de forma consistente el mecanismo de evaluación tradicional. 
+Todo apunta a que serían necesarias más iteraciones de entrenamiento y conjuntos de datos más amplios para capturar con mayor profundidad los aspectos estratégicos del juego. 
+
+Pese a las limitaciones observadas, los resultados demuestran que esta estrategia podría proporcionar mejoras interesantes con un entrenamiento más adecuado y exhaustivo. 
+Una red neuronal más precisa podría no solo mejorar la calidad de las decisiones tomadas por el agente, sino también reducir el coste computacional asociado a la evaluación de los estados, permitiendo alcanzar un mejor equilibrio entre rendimiento y tiempo de respuesta. 
+
+Como posibles líneas de mejora, se plantea continuar mejorando el proceso de entrenamiento mediante conjuntos de datos más extensos y diversos, así como explorar arquitecturas neuronales más complejas que permitan extraer información estratégica de manera más eficaz. 
+También resultaría interesante estudiar enfoques híbridos que combinen las ventajas de las simulaciones propias de UCT con las valoraciones proporcionadas por la red neuronal, aprovechando las fortalezas de ambos métodos. 
+
+Por último, otra posible mejora consistiría en reutilizar parte del árbol de búsqueda generado entre movimientos consecutivos. 
+Esta estrategia permitiría conservar información obtenida en iteraciones anteriores, reduciendo el tiempo necesario para tomar decisiones y aumentando potencialmente la calidad de las jugadas seleccionadas. 
+
+\section{Declaración de uso de IA generativa} 
+
+Durante la realización de este proyecto se ha utilizado inteligencia artificial generativa como herramienta de apoyo tanto en tareas de implementación como en la elaboración de la documentación. 
+En concreto, se ha usado ChatGPT, de OpenAl. A continuación, se describen los aspectos en los que se ha usado, así como las entradas proporcionadas a los mismos. 
 
 \begin{itemize}
-\item Almacenamiento de datos obtenidos en las simulaciones de partidas: Tras implementar el sistema de generación de datos, necesitábamos un formato de fichero en el que guardarlo, distinto a CSV, el cual se había usado con frecuencia en las prácticas del curso, ya que el formato de los datos era demasiado complejo. Para resolver la duda, se le proporcionó a la inteligencia artificial contexto sobre el formato de los datos, pidiendo que diera opciones y analizara ventajas y desventajas. Finalmente, nos decantamos por \emph{Pickle} por su sencillez de almacenamiento y carga de datos a través de \emph{Pandas}.
-\item Paralelización de la simulación de partidas: Una vez llegado el momento de generar datos para entrenar la red neuronal, se percibió que el proceso era demasiado lento. Gracias a los conocimientos de asignaturas anteriores, sabíamos que una solución fácil era paralelizar el proceso, pero no recordábamos como hacerlo exactamente. Por tanto, se le preguntó a la inteligencia artificial que nos explicara una forma de conseguir simular varias partidas al mismo tiempo aprovechando los hilos del procesador. Usando la respuesta proporcionada y la documentación oficial de Python se llegó a una solución.
-\item Documentación en LaTeX~\cite{b17}: Casi la totalidad del documento se pudo escribir sin problemas siguiendo la plantilla proporcionada. Sin embargo, se encontraron algunos problemas en tres aspectos: Las figuras no siempre aparecían en el lugar deseado, el pseudocódigo era difícil de escribir en este formato dados nuestros escasos conocimientos, y se desconocía la forma de convertir a formato PDF. Ante esto, se decidió pedir consejo a la inteligencia artificial, describiendo la fuente del problema y pidiendo soluciones viables. Como respuesta, se recibió una forma de forzar que las figuras se muestren donde deben, así como algunas formas de cambiar la separación entre párrafos y secciones para que las figuras se acabaran mostrando en el mismo lugar que en el formato \emph{Word}. También se recibió un prototipo de pseudocódigo que después fue modificado para ajustarlo a nuestras necesidades y se nos dio opciones de distintos sistemas para instalar que permitirían, entre otras cosas, la generación del documento PDF a través de líneas de comando.
+\item Almacenamiento de datos obtenidos en las simulaciones de partidas: Durante el desarrollo del sistema de generación de partidas surgieron dudas acerca del formato más adecuado para almacenar los estados y resultados obtenidos. Necesitábamos un formato distinto a CSV, el cual se había usado con frecuencia en las prácticas del curso, ya que el formato de los datos era demasiado complejo. Para resolver la duda, se le proporcionó a la inteligencia artificial una descripción de la estructura de los datos y se solicitaron distintas alternativas junto con sus ventajas e inconvenientes. Tras analizar las opciones propuestas, se optó por utilizar ficheros Pickle debido a su sencillez para almacenar y recuperar estructuras de datos complejas y carga de datos a través de Pandas. 
+\item Paralelización de la generación de partidas: Cuando llegó el momento de generar las partidas necesarias para entrenar la red neuronal, comprobamos que el proceso era bastante lento debido al gran volumen de simulaciones que debían realizarse. Sabíamos que una posible solución consistía en ejecutar varias partidas de forma paralela. Por ello, utilizamos la inteligencia artificial como apoyo para repasar distintas alternativas de paralelización. A partir de las explicaciones obtenidas y de la consulta posterior a la documentación oficial de Python, se desarrolló una solución que permitió ejecutar varias simulaciones simultáneamente y reducir de forma notable el tiempo de generación de los datos de entrenamiento. 
 \end{itemize}
 
 \begin{thebibliography}{00}
-\bibitem{b1} \href{https://deepmind.google/research/projects/alphago/}{Página web oficial del proyecto de investigación AlphaGo}, realizado por Google DeepMind.
-\bibitem{b2} David Silver, Thomas Hubert, Julian Schrittwieser, Demis Hassabis: \href{https://deepmind.google/discover/blog/alphazero-shedding-new-light-on-chess-shogi-and-go/}{Entrada de blog divulgativa sobre AlphaZero}, desarrollado por Google DeepMind.
-\bibitem{b3} \href{https://www.cs.us.es/docencia/aulavirtual/pluginfile.php/9264/mod_resource/content/5/Aprendizaje_automático_%28Contenido_teórico%29.pdf}{Apuntes de aprendizaje automático} de la asignatura Inteligencia Artificial, del Departamento de Ciencias de la Computación e Inteligencia Artificial, de la Universidad de Sevilla.
-\bibitem{b4} \href{https://www.cs.us.es/docencia/aulavirtual/pluginfile.php/9479/mod_resource/content/2/Redes_neuronales_%28Contenido_teórico%29.pdf}{Apuntes de redes neuronales} de la asignatura Inteligencia Artificial, del Departamento de Ciencias de la Computación e Inteligencia Artificial, de la Universidad de Sevilla.
-\bibitem{b5} C. B. Browne, E. Powley, D. Whitehouse, S. M. Lucas, P. I. Cowling, P. Rohlfshagen, S. Tavener, D. Perez, S. Samothrakis, and S. Colton, “A Survey of Monte Carlo Tree Search Methods,” IEEE Transactions on Computational Intelligence and AI in Games, vol. 4, no. 1, pp. 1–43, 2012, doi: \href{https://ieeexplore.ieee.org/document/6145622}{10.1109/TCIAIG.2012.2186810.}
-\bibitem{b6} D. Silver, A. Huang, C. J. Maddison, A. Guez, L. Sifre, G. van den Driessche, J. Schrittwieser, I. Antonoglou, V. Panneershelvam, M. Lanctot, S. Dieleman, D. Grewe, J. Nham, N. Kalchbrenner, I. Sutskever, T. Lillicrap, M. Leach, K. Kavukcuoglu, T. Graepel, and D. Hassabis, “Mastering the game of Go with deep neural networks and tree search,” Nature, vol. 529, no. 7587, pp. 484–489, 2016, doi: \href{https://www.nature.com/articles/nature16961}{10.1038/nature16961.}
-\bibitem{b7} D. Silver, J. Schrittwieser, K. Simonyan, I. Antonoglou, A. Huang, A. Guez, T. Hubert, L. Baker, M. Lai, A. Bolton, Y. Chen, T. Lillicrap, F. Hui, L. Sifre, G. van den Driessche, T. Graepel, and D. Hassabis, “Mastering the game of Go, Chess, and Shogi by self-play with a general reinforcement learning algorithm,” arXiv preprint, arXiv:1712.01815, 2017. \href{https://arxiv.org/abs/1712.01815}{arXiv:1712.01815}.
-\bibitem{b8} Sandra Alegría Ocampo, de la Universidad de Cantabria: \href{https://repositorio.unican.es/xmlui/bitstream/handle/10902/33691/AlegriaOcampoSandra.pdf}{“Jugando al Othello con Inteligencia Artificial”.}
-\bibitem{b9} \href{https://pandas.pydata.org/}{Página web oficial de Pandas.}
-\bibitem{b10} \href{https://docs.python.org/3/library/pickle.html}{Documentación de Python sobre el módulo Pickle.}
-\bibitem{b11} \href{https://docs.python.org/3/library/multiprocessing.html}{Documentación de Python sobre el módulo multiprocessing.}
-\bibitem{b12} \href{https://keras.io/}{Página web oficial de Keras.}
-\bibitem{b13} \href{https://keras.io/api/optimizers/adam/}{Página web de Keras con información de uso del optimizador Adam.}
-\bibitem{b14} \href{https://scikit-learn.org/stable/}{Página web oficial de Scikit Learn.}
-\bibitem{b15} \href{https://www.tensorflow.org/}{Página web oficial de TensorFlow.}
-\bibitem{b16} \href{https://docs.python.org/3/library/random.html}{Documentación de Python sobre el módulo random.}
-\bibitem{b17} \href{https://www.latex-project.org}{Página web oficial del sistema LaTeX.}
+\bibitem{b1} Página web oficial del proyecto de investigación AlphaGo, realizado por Google DeepMind. 
+\bibitem{b2} David Silver, Thomas Hubert, Julian Schrittwieser, Demis Hassabis: Entrada de blog divulgativa sobre AlphaZero, desarrollado por Google DeepMind. 
+\bibitem{b3} Apuntes de aprendizaje automático de la asignatura Inteligencia Artificial, del Departamento de Ciencias de la Computación e Inteligencia Artificial, de la Universidad de Sevilla. 
+\bibitem{b4} Apuntes de redes neuronales de la asignatura Inteligencia Artificial, del Departamento de Ciencias de la Computación e Inteligencia Artificial, de la Universidad de Sevilla. 
+\bibitem{b5} C. B. Browne, E. Powley, D. Whitehouse, S. M. Lucas, P. I. Cowling, P. Rohlfshagen, S. Tavener, D. Perez, S. Samothrakis, and S. Colton, "A Survey of Monte Carlo Tree Search Methods," IEEE Transactions on Computational Intelligence and Al in Games, vol. 4, no. 1, pp. 1-43, 2012, doi: 10.1109/TCIAIG.2012.2186810. 
+\bibitem{b6} D. Silver, A. Huang, C. J. Maddison, A. Guez, L. Sifre, G. van den Driessche, J. Schrittwieser, I. Antonoglou, V. Panneershelvam, M. Lanctot, S. Dieleman, D. Grewe, J. Nham, N. Kalchbrenner, I. Sutskever, T. Lillicrap, M. Leach, K. Kavukcuoglu, T. Graepel, and D. Hassabis, "Mastering the game of Go with deep neural networks and tree search," Nature, vol. 529, no. 7587, pp. 484 489, 2016, doi: 10.1038/nature16961. 
+\bibitem{b7} D. Silver, J. Schrittwieser, K. Simonyan, I. Antonoglou, A. Huang, A. Guez, T. Hubert, L. Baker, M. Lai, A. Bolton, Y. Chen, T. Lillicrap, F. Hui, L. Sifre, G. van den Driessche, T. Graepel, and D. Hassabis, "Mastering the game of Go, Chess, and Shogi by self-play with a general reinforcement learning algorithm," arXiv preprint, arXiv:1712.01815, 2017. arXiv:1712.01815. 
+\bibitem{b8} Sandra Alegría Ocampo, de la Universidad de Cantabria: "Jugando al Othello con Inteligencia Artificial". 
+\bibitem{b9} Página web oficial de Pandas. 
+\bibitem{b10} Documentación de Python sobre el módulo Pickle. 
+\bibitem{b11} Documentación de Python sobre el módulo multiprocessing. 
+\bibitem{b12} Página web oficial de Keras. 
+\bibitem{b13} Página web de Keras con información de uso del optimizador Adam. 
+\bibitem{b14} Página web oficial de Scikit Learn. 
+\bibitem{b15} Página web oficial de TensorFlow. 
+\bibitem{b16} Documentación de Python sobre el módulo random. 
 \end{thebibliography}
-
 
 \end{document}
